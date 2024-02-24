@@ -13,6 +13,9 @@ for track in tree.getroot():
     # Skip if it's not a track
     if track.tag != 'track':
         continue
+    # Skipt if label is not car
+    if track.attrib['label'] != 'car':
+        continue
     # Get the id of the track
     track_id = track.attrib['id']
     print(f"Track ID: {track_id}")
