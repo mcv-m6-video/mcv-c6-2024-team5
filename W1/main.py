@@ -67,6 +67,9 @@ for i in range(int(total_frames * FRAMES_PERCENTAGE), total_frames):
     binary_frame = binary_frame * 255
     # Add rectangles to the frame
     for car_id, car in frame_dict[str(i)].items():
+        # Skip if the car is parked
+        if car['is_parked']:
+            continue
         x1 = int(car['xtl'])
         y1 = int(car['ytl'])
         x2 = int(car['xbr'])
