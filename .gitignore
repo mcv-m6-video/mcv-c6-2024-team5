@@ -1,1 +1,5 @@
 W1/data
+
+# Python .gitignore
+__pycache__/
+*.py[cod]
