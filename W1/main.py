@@ -11,12 +11,17 @@ def main():
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     frame_dict = load_frame_dict()
     
-    if not gv.Params.MEAN_STD_COMPUTED:
+    if gv.Params.RECOMPUTE_MEAN_STD:
         frames = process_frames(cap, total_frames)
         mean, std = compute_mean_std(frames)
         save_mean_std(mean, std)
     else:
-        mean, std = load_mean_std()
+        try:
+            mean, std = load_mean_std()
+        except FileNotFoundError:
+            # Log error and exit
+            print("Error: mean and std files not found")
+            return
     
     mean_to_viz, std_to_viz = truncate_values(mean, std)
     save_visualizations(mean_to_viz, std_to_viz)
@@ -24,6 +29,11 @@ def main():
     binary_frames = generate_binary_frames(cap, total_frames, mean, std)
     show_binary_frames(binary_frames, frame_dict, total_frames)
     
+    # If adaptive modelling is enabled, save the mean and std for the end of the video
+    if gv.Params.ADAPTIVE_MODELLING:
+        mean_to_viz, std_to_viz = truncate_values(mean, std)
+        save_visualizations(mean_to_viz, std_to_viz, start=False)
+
     cap.release()
     cv2.destroyAllWindows()
 

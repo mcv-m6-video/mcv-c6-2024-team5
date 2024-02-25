@@ -23,19 +23,23 @@ def init():
     PATH_TO_OUTPUT = "./output/"
 
     parser = argparse.ArgumentParser(description='C6 Team 5 - Week 1')
-    parser.add_argument('--mean-std-computed', action='store_true', default=False, help='Whether the mean and standard deviation have been computed')
+    parser.add_argument('--recompute-mean-std', action='store_true', default=False, help='Whether the mean and standard deviation should be recomputed')
     parser.add_argument('--frames-percentage', type=float, default=0.25, help='Percentage of frames to use for the mean and standard deviation computation')
     parser.add_argument('--alpha', type=int, default=10, help='Alpha value for the binary frames computation')
     parser.add_argument('--adaptive-modelling', action='store_true', default=True, help='Whether to use adaptive modelling')
     parser.add_argument('--rho', type=int, default=0.5, help='Rho value for the binary frames computation')
+    parser.add_argument('--rgb-color', action='store_true', default=False, help='Whether to use RGB color for the binary frames computation')
     args = parser.parse_args()
     
     # PARAMETERS
     class Params:
-        MEAN_STD_COMPUTED = args.mean_std_computed
+        RECOMPUTE_MEAN_STD = args.recompute_mean_std
         FRAMES_PERCENTAGE = args.frames_percentage
         ALPHA = args.alpha
         ADAPTIVE_MODELLING = args.adaptive_modelling
+        MODELLING_TAG = "adaptive" if ADAPTIVE_MODELLING else "static"
         RHO = args.rho
+        RGB_COLOR = args.rgb_color
+        COLOR_TAG = "rgb" if RGB_COLOR else "grayscale"
     
     log_params()
