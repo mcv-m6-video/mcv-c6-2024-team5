@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
 import json
+import os
+
 import source.global_variables as gv
 
 ## LOADING FUNCTIONS
@@ -12,7 +14,7 @@ def load_video():
     return cap
 
 def load_frame_dict():
-    with open(f"{gv.PATH_TO_OUTPUT}frame_dict.json") as file:
+    with open(f"frame_dict.json") as file:
         frame_dict = json.load(file)
     return frame_dict
 
@@ -24,6 +26,12 @@ def load_mean_std(start=True):
 
 ## SAVING FUNCTIONS
 
+def init_output_folder():
+    os.makedirs(f"{gv.Params.PATH_RUN}", exist_ok=True)
+    params_dict = gv.params_as_dict()
+    with open(f"{gv.Params.PATH_RUN}params.json", "w") as file:
+        json.dump(params_dict, file)
+
 def save_mean_std(mean, std, start=True):
     phase_tag = "start" if start else "end"
     np.save(f"{gv.PATH_TO_TMP}mean_{phase_tag}_{gv.Params.COLOR_TAG}_alpha{str(gv.Params.ALPHA)}.npy", mean)
@@ -31,5 +39,5 @@ def save_mean_std(mean, std, start=True):
 
 def save_visualizations(mean_to_viz, std_to_viz, start=True):
     phase_tag = "start" if start else "end"
-    cv2.imwrite(f"{gv.PATH_TO_OUTPUT}mean_{phase_tag}_{gv.Params.COLOR_TAG}_{gv.Params.MODELLING_TAG}_alpha{str(gv.Params.ALPHA)}.png", mean_to_viz)
-    cv2.imwrite(f"{gv.PATH_TO_OUTPUT}std_{phase_tag}_{gv.Params.COLOR_TAG}_{gv.Params.MODELLING_TAG}_alpha{str(gv.Params.ALPHA)}.png", std_to_viz)
+    cv2.imwrite(f"{gv.Params.PATH_RUN}mean_{phase_tag}.png", mean_to_viz)
+    cv2.imwrite(f"{gv.Params.PATH_RUN}std_{phase_tag}.png", std_to_viz)

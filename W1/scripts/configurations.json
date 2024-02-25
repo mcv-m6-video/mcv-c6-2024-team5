@@ -1,0 +1,82 @@
+[
+    {
+        "--alpha": 0,
+        "--recompute-mean-std": true,
+        "--show-binary-frames": true
+    },
+    {
+        "--alpha": 1,
+        "--recompute-mean-std": true,
+        "--show-binary-frames": true
+    },
+    {
+        "--alpha": 2,
+        "--recompute-mean-std": true,
+        "--show-binary-frames": true
+    },
+    {
+        "--alpha": 3,
+        "--recompute-mean-std": true,
+        "--show-binary-frames": true
+    },
+    {
+        "--alpha": 4,
+        "--recompute-mean-std": true,
+        "--show-binary-frames": true
+    },
+    {
+        "--alpha": 5,
+        "--recompute-mean-std": true,
+        "--show-binary-frames": true
+    },
+    {
+        "--alpha": 6,
+        "--recompute-mean-std": true,
+        "--show-binary-frames": true
+    },
+    {
+        "--alpha": 7,
+        "--recompute-mean-std": true,
+        "--show-binary-frames": true
+    },
+    {
+        "--alpha": 8,
+        "--recompute-mean-std": true,
+        "--show-binary-frames": true
+    },
+    {
+        "--alpha": 9,
+        "--recompute-mean-std": true,
+        "--show-binary-frames": true
+    },
+    {
+        "--alpha": 10,
+        "--recompute-mean-std": true,
+        "--show-binary-frames": true
+    },
+    {
+        "--alpha": 11,
+        "--recompute-mean-std": true,
+        "--show-binary-frames": true
+    },
+    {
+        "--alpha": 12,
+        "--recompute-mean-std": true,
+        "--show-binary-frames": true
+    },
+    {
+        "--alpha": 13,
+        "--recompute-mean-std": true,
+        "--show-binary-frames": true
+    },
+    {
+        "--alpha": 14,
+        "--recompute-mean-std": true,
+        "--show-binary-frames": true
+    },
+    {
+        "--alpha": 15,
+        "--recompute-mean-std": true,
+        "--show-binary-frames": true
+    }
+]

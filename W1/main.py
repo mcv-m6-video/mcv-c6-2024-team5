@@ -1,12 +1,15 @@
 import cv2
 
-from source.data_io import load_video, load_frame_dict, load_mean_std, save_mean_std, save_visualizations
+from source.data_io import load_video, load_frame_dict, load_mean_std, save_mean_std, save_visualizations, init_output_folder
 from source.image_processing import process_frames, compute_mean_std, truncate_values, generate_binary_frames
 from source.visualization import show_binary_frames
 import source.global_variables as gv
 
 def main():
+    # Initialize global variables and output folder
     gv.init()
+    init_output_folder()
+
     cap = load_video()
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     frame_dict = load_frame_dict()

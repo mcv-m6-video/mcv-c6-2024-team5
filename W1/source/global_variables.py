@@ -43,5 +43,10 @@ def init():
         RGB_COLOR = args.rgb_color
         COLOR_TAG = "rgb" if RGB_COLOR else "grayscale"
         SHOW_BINARY_FRAMES = args.show_binary_frames
+
+        if ADAPTIVE_MODELLING:
+            PATH_RUN = f"{PATH_TO_OUTPUT}{MODELLING_TAG}_{COLOR_TAG}_alpha={str(ALPHA)}_rho={str(RHO)}/"
+        else:
+            PATH_RUN = f"{PATH_TO_OUTPUT}{MODELLING_TAG}_{COLOR_TAG}_alpha={str(ALPHA)}/"
     
     log_params()
