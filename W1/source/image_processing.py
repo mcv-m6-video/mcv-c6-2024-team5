@@ -35,7 +35,7 @@ def generate_binary_frames(cap, total_frames, mean, std):
         #? If condition is true, then set the pixel to 255, so it is white -> Foreground
         binary_frame = (frame - mean >= gv.Params.ALPHA * (std + 2)).astype(np.uint8) * 255
         if gv.Params.ADAPTIVE_MODELLING:
-            # Update mean and std only for the pixels classified as background (0)
+            # Update mean and std only for the pixels classified as Background (0)
             aux_mean = (1 - gv.Params.RHO) * mean + gv.Params.RHO * frame
             aux_std = np.sqrt((1 - gv.Params.RHO) * std ** 2 + gv.Params.RHO * (frame - mean) ** 2)
             mean = np.where(binary_frame == 0, aux_mean, mean)
