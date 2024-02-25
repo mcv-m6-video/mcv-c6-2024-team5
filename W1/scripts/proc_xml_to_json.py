@@ -1,7 +1,7 @@
 import xml.etree.ElementTree as ET
 import json
-PATH_TO_XML = 'data/ai_challenge_s03_c010-full_annotation.xml'
-PATH_TO_OUTPUT = 'output/'
+PATH_TO_XML = '../data/ai_challenge_s03_c010-full_annotation.xml'
+PATH_TO_OUTPUT = '../output/'
 
 frame_dict = {}
 
