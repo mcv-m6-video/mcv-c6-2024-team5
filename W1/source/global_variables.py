@@ -23,9 +23,9 @@ def init():
     PATH_TO_OUTPUT = "./output/"
 
     parser = argparse.ArgumentParser(description='C6 Team 5 - Week 1')
-    parser.add_argument('--recompute-mean-std', action='store_true', default=True, help='Whether the mean and standard deviation should be recomputed')
+    parser.add_argument('--recompute-mean-std', action='store_true', default=False, help='Whether the mean and standard deviation should be recomputed')
     parser.add_argument('--frames-percentage', type=float, default=0.25, help='Percentage of frames to use for the mean and standard deviation computation')
-    parser.add_argument('--alpha', type=float, default=1.75, help='Alpha value for the binary frames computation')
+    parser.add_argument('--alpha', type=float, default=10, help='Alpha value for the binary frames computation')
     parser.add_argument('--adaptive-modelling', action='store_true', default=True, help='Whether to use adaptive modelling')
     parser.add_argument('--rho', type=float, default=0.4, help='Rho value for the binary frames computation')
     parser.add_argument('--rgb-color', action='store_true', default=False, help='Whether to use RGB color for the binary frames computation')
