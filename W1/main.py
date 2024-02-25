@@ -27,7 +27,8 @@ def main():
     save_visualizations(mean_to_viz, std_to_viz)
     
     binary_frames = generate_binary_frames(cap, total_frames, mean, std)
-    show_binary_frames(binary_frames, frame_dict, total_frames)
+    if gv.Params.SHOW_BINARY_FRAMES:
+        show_binary_frames(binary_frames, frame_dict, total_frames)
     
     # If adaptive modelling is enabled, save the mean and std for the end of the video
     if gv.Params.ADAPTIVE_MODELLING:
