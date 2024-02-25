@@ -1,5 +1,17 @@
 import argparse
 
+def log_params():
+    print("--- PARAMETERS ---")
+    for key, value in vars(Params).items():
+        # Filter out private variables
+        if key.startswith("__"):
+            continue
+        print(f"{key}: {value}")
+    print("------------------")
+
+def params_as_dict():
+    return {key: value for key, value in vars(Params).items() if not key.startswith("__")}
+
 def init():
     global PATH_TO_DATA, PATH_TO_VIDEO, PATH_TO_TMP, PATH_TO_OUTPUT
     global Params
@@ -21,4 +33,5 @@ def init():
         MEAN_STD_COMPUTED = args.mean_std_computed
         FRAMES_PERCENTAGE = args.frames_percentage
         ALPHA = args.alpha
-        
+    
+    log_params()
