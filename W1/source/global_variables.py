@@ -26,6 +26,8 @@ def init():
     parser.add_argument('--mean-std-computed', action='store_true', default=False, help='Whether the mean and standard deviation have been computed')
     parser.add_argument('--frames-percentage', type=float, default=0.25, help='Percentage of frames to use for the mean and standard deviation computation')
     parser.add_argument('--alpha', type=int, default=10, help='Alpha value for the binary frames computation')
+    parser.add_argument('--adaptive-modelling', action='store_true', default=True, help='Whether to use adaptive modelling')
+    parser.add_argument('--rho', type=int, default=0.5, help='Rho value for the binary frames computation')
     args = parser.parse_args()
     
     # PARAMETERS
@@ -33,5 +35,7 @@ def init():
         MEAN_STD_COMPUTED = args.mean_std_computed
         FRAMES_PERCENTAGE = args.frames_percentage
         ALPHA = args.alpha
+        ADAPTIVE_MODELLING = args.adaptive_modelling
+        RHO = args.rho
     
     log_params()
