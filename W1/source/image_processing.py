@@ -22,11 +22,22 @@ def process_frames(cap, total_frames):
         
     return np.array(frames)
 
-def compute_mean_std(frames):
-    mean = np.mean(frames, axis=0)
-    std = np.std(frames, axis=0)
+def compute_mean_std(frames):   
+    # Incremental computation for color frames
+    mean = np.zeros_like(frames[0], dtype=np.float64)
+    sq_mean = np.zeros_like(frames[0], dtype=np.float64)
+    for frame in frames:
+        frame = frame.astype(np.float64)
+        mean += frame
+        sq_mean += np.square(frame)
+    mean /= len(frames)
+    std = np.sqrt((sq_mean / len(frames)) - np.square(mean))
+    
+    # ! OLD and slow method
+    # mean = np.mean(frames, axis=0)
+    # std = np.std(frames, axis=0)
 
-    return mean, std
+    return mean.astype(np.float32), std.astype(np.float32)
 
 def truncate_values(mean, std):
     mean_to_viz = np.clip(mean, 0, 255).astype(np.uint8)
