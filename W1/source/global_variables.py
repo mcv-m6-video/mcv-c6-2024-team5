@@ -30,6 +30,7 @@ def init():
     parser.add_argument('--rho', type=float, default=0.4, help='Rho value for the binary frames computation')
     parser.add_argument('--color', action='store_true', default=False, help='Whether to use RGB color for the binary frames computation')
     parser.add_argument('--show-binary-frames', action='store_true', default=True, help='Whether to show the binary frames')
+    parser.add_argument('--tag', type=str, default="", help='Tag for the output folder')
     args = parser.parse_args()
     
     # PARAMETERS
@@ -43,10 +44,11 @@ def init():
         COLOR = args.color
         COLOR_TAG = "rgb" if COLOR else "grayscale"
         SHOW_BINARY_FRAMES = args.show_binary_frames
+        TAG = args.tag
 
         if ADAPTIVE_MODELLING:
-            PATH_RUN = f"{PATH_TO_OUTPUT}{MODELLING_TAG}_{COLOR_TAG}_alpha={str(ALPHA)}_rho={str(RHO)}/"
+            PATH_RUN = f"{PATH_TO_OUTPUT}{TAG}_{MODELLING_TAG}_{COLOR_TAG}_alpha={str(ALPHA)}_rho={str(RHO)}/"
         else:
-            PATH_RUN = f"{PATH_TO_OUTPUT}{MODELLING_TAG}_{COLOR_TAG}_alpha={str(ALPHA)}/"
+            PATH_RUN = f"{PATH_TO_OUTPUT}{TAG}_{MODELLING_TAG}_{COLOR_TAG}_alpha={str(ALPHA)}/"
     
     log_params()
