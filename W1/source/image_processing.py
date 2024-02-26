@@ -66,14 +66,19 @@ def generate_binary_frames(cap, total_frames, mean, std):
     return binary_frames
 
 def post_processing(binary_frame):
-    # Erotion to remove noise
-    kernel = np.ones((5, 5), np.uint8)
-    binary_frame = cv2.morphologyEx(binary_frame, cv2.MORPH_ERODE, kernel)
+    # circular kernel
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+    binary_frame = cv2.morphologyEx(binary_frame, cv2.MORPH_CLOSE, kernel)
+    binary_frame = cv2.morphologyEx(binary_frame, cv2.MORPH_OPEN, kernel)
     # Gaussian blur to smooth the edges, remove noise and fill some gaps
-    binary_frame = cv2.GaussianBlur(binary_frame, (19, 19), 0)
-    binary_frame = cv2.threshold(binary_frame, 100, 255, cv2.THRESH_BINARY)[1]
+    binary_frame = cv2.GaussianBlur(binary_frame, (5, 5), 0)
+    binary_frame = cv2.threshold(binary_frame, 50, 50, cv2.THRESH_BINARY)[1]
     # Close with a vertical kernel to join the low part of the cars with the high part
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (10, 10))
+    binary_frame = cv2.morphologyEx(binary_frame, cv2.MORPH_CLOSE, kernel)
     kernel = np.ones((53, 3), np.uint8)
+    binary_frame = cv2.morphologyEx(binary_frame, cv2.MORPH_CLOSE, kernel)
+    kernel = np.ones((3, 53), np.uint8)
     binary_frame = cv2.morphologyEx(binary_frame, cv2.MORPH_CLOSE, kernel)
     return binary_frame
 
@@ -87,10 +92,13 @@ def find_connected_components(binary_frame):
     """Finds connected components in a binary frame and returns a list of bounding boxes"""
     conn, labels, values, centroids = cv2.connectedComponentsWithStats(binary_frame)
     # Filter out small connected components
+    height, width = binary_frame.shape
     bounding_boxes = []
     for label in range(1, conn):  # Skip background label (0)
         x, y, w, h, area = values[label]
         # Hand-picked thresholds (can be adjusted)
-        if area > 500 and area < 100000 and w > h:
+        if area > 750 and area < 1000000 and w > h and w/h <3:
+            bounding_boxes.append((x, y, x + w, y + h))
+        elif area > 250 and area < 1000000 and  y <height/7 and w > h and h/w <3:
             bounding_boxes.append((x, y, x + w, y + h))
     return bounding_boxes
