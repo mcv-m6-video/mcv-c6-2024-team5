@@ -45,17 +45,22 @@ def compute_ap(gt_boxes, pred_boxes):
         else:
             fp[i] = 1
 
-    # TODO: Check if this is correct, it fails when there is only 1 prediction
     tp = np.cumsum(tp)
     fp = np.cumsum(fp)
     recall = tp / len(gt_boxes)
     precision = tp / (tp + fp)
 
-    # Compute average precision
-    ap = 0
-    for i in range(1, len(precision)):
-        ap += (recall[i] - recall[i - 1]) * precision[i]
+    # Generate graph with the 11-point interpolated precision-recall curve
+    recall_interp = np.linspace(0, 1, 11)
+    precision_interp = np.zeros(11)
+    for i, r in enumerate(recall_interp):
+        array_precision = precision[recall >= r]
+        if len(array_precision) == 0:
+            precision_interp[i] = 0
+        else:
+            precision_interp[i] = max(precision[recall >= r])
 
+    ap = np.mean(precision_interp)
     return ap
 
 def compute_video_ap(gt, pred):
