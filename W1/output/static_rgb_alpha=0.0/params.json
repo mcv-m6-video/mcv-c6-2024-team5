@@ -1,0 +1,1 @@
+{"RECOMPUTE_MEAN_STD": true, "FRAMES_PERCENTAGE": 0.25, "ALPHA": 0.0, "ADAPTIVE_MODELLING": false, "MODELLING_TAG": "static", "RHO": 0.4, "COLOR": true, "COLOR_TAG": "rgb", "SHOW_BINARY_FRAMES": true, "PATH_RUN": "./output/static_rgb_alpha=0.0/"}

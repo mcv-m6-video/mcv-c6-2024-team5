@@ -6,17 +6,26 @@ import source.global_variables as gv
 
 def process_frames(cap, total_frames):
     frames = []
+    print(f"Processing {int(total_frames * gv.Params.FRAMES_PERCENTAGE)} frames for background modelling ({int(gv.Params.FRAMES_PERCENTAGE * 100)}% of the video)")
     for i in range(int(total_frames * gv.Params.FRAMES_PERCENTAGE)):
         ret, frame = cap.read()
         if not ret:
             break
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        if not gv.Params.COLOR:
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        
+        # Log each 50 frames
+        if i % 50 == 0:
+            print(f"Processing frame {i}/{int(total_frames * gv.Params.FRAMES_PERCENTAGE)} for background modelling")
+
         frames.append(frame)
+        
     return np.array(frames)
 
 def compute_mean_std(frames):
     mean = np.mean(frames, axis=0)
     std = np.std(frames, axis=0)
+
     return mean, std
 
 def truncate_values(mean, std):
