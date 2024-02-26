@@ -4,6 +4,21 @@ import source.global_variables as gv
 
 ## PROCESSING FUNCTIONS
 
+def get_relevant_color(frame):
+    if gv.Params.COLOR:
+        if gv.Params.COLOR_SPACE == "rgb":
+            return frame
+        elif gv.Params.COLOR_SPACE == "hsv":
+            return cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        elif gv.Params.COLOR_SPACE == "yuv":
+            return cv2.cvtColor(frame, cv2.COLOR_BGR2YUV)
+        elif gv.Params.COLOR_SPACE == "lab":
+            return cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
+        elif gv.Params.COLOR_SPACE == "ycrcb":
+            return cv2.cvtColor(frame, cv2.COLOR_BGR2YCrCb)
+    else:
+        return cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
 def process_frames(cap, total_frames):
     frames = []
     print(f"Processing {int(total_frames * gv.Params.FRAMES_PERCENTAGE)} frames for background modelling ({int(gv.Params.FRAMES_PERCENTAGE * 100)}% of the video)")
@@ -11,8 +26,7 @@ def process_frames(cap, total_frames):
         ret, frame = cap.read()
         if not ret:
             break
-        if not gv.Params.COLOR:
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        frame = get_relevant_color(frame)
         
         # Log each 50 frames
         if i % 50 == 0:
@@ -51,8 +65,7 @@ def generate_binary_frames(cap, total_frames, mean, std):
         ret, frame = cap.read()
         if not ret:
             break
-        if not gv.Params.COLOR:
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        frame = get_relevant_color(frame)
 
         # Compute absolute difference and threshold
         if gv.Params.COLOR:

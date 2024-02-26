@@ -20,8 +20,12 @@ def load_frame_dict():
 
 def load_mean_std(start=True):
     phase_tag = "start" if start else "end"
-    mean = np.load(f"{gv.PATH_TO_TMP}mean_{phase_tag}_{gv.Params.COLOR_TAG}_alpha{str(gv.Params.ALPHA)}.npy")
-    std = np.load(f"{gv.PATH_TO_TMP}std_{phase_tag}_{gv.Params.COLOR_TAG}_alpha{str(gv.Params.ALPHA)}.npy")
+    if gv.Params.COLOR:
+        colors_tags = f"{gv.Params.COLOR_TAG}_{gv.Params.COLOR_SPACE}"
+    else:
+        colors_tags = f"{gv.Params.COLOR_TAG}"
+    mean = np.load(f"{gv.PATH_TO_TMP}mean_{phase_tag}_{colors_tags}.npy")
+    std = np.load(f"{gv.PATH_TO_TMP}std_{phase_tag}_{colors_tags}.npy")
     return mean, std
 
 ## SAVING FUNCTIONS
@@ -34,8 +38,12 @@ def init_output_folder():
 
 def save_mean_std(mean, std, start=True):
     phase_tag = "start" if start else "end"
-    np.save(f"{gv.PATH_TO_TMP}mean_{phase_tag}_{gv.Params.COLOR_TAG}.npy", mean)
-    np.save(f"{gv.PATH_TO_TMP}std_{phase_tag}_{gv.Params.COLOR_TAG}.npy", std)
+    if gv.Params.COLOR:
+        colors_tags = f"{gv.Params.COLOR_TAG}_{gv.Params.COLOR_SPACE}"
+    else:
+        colors_tags = f"{gv.Params.COLOR_TAG}"
+    np.save(f"{gv.PATH_TO_TMP}mean_{phase_tag}_{colors_tags}.npy", mean)
+    np.save(f"{gv.PATH_TO_TMP}std_{phase_tag}_{colors_tags}.npy", std)
 
 def save_visualizations(mean_to_viz, std_to_viz, start=True):
     phase_tag = "start" if start else "end"
