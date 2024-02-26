@@ -1,4 +1,5 @@
 import cv2
+import numpy as np
 import source.global_variables as gv
 
 ## VISUALIZATION FUNCTIONS
@@ -26,3 +27,25 @@ def put_text_top_left(frame, text):
     fontColor = (255, 255, 255)
     lineType = 2
     cv2.putText(frame, text, bottomLeftCornerOfText, font, fontScale, fontColor, lineType)
+
+def show_frame_with_pred(cap, binary_frames, total_frames, gt, preds, aps, map):
+    cap.set(cv2.CAP_PROP_POS_FRAMES, int(total_frames * gv.Params.FRAMES_PERCENTAGE))
+    for i in range(int(total_frames * gv.Params.FRAMES_PERCENTAGE), total_frames):
+        ret, frame = cap.read()
+        if not ret:
+            break
+        #frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        #frame = frames[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)]
+        binary_frame = binary_frames[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)]
+
+        # combine binary_frame as an overlay of frame with the binarization in pink color
+        binary_frame_color = np.zeros(frame.shape, dtype=np.uint8)
+        
+        # fill the binary_frame_color with the binary_frame items that were not zeros as pink
+        binary_frame_color[binary_frame != 0] = [255, 0, 255]
+        overlay = cv2.addWeighted(frame, 0.7, binary_frame_color, 0.3, 0)
+        overlay = add_rectangles_to_frame(overlay, gt[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)], (0, 0, 255))
+        overlay = add_rectangles_to_frame(overlay, preds[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)], (0, 255, 0))
+        put_text_top_left(overlay, f"AP: {aps[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)]:.5f}, Frame: {i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)}. mAP of full video: {map:.5f}")
+        cv2.imshow('overlay', overlay)
+        cv2.waitKey(0)

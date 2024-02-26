@@ -63,3 +63,8 @@ def calculate_mAP(gts, aps):
         if len(gt) > 0:
             valid_aps.append(ap)
     return np.mean(valid_aps)
+
+def save_metrics(aps, map):
+    results = {"aps": aps, "mAP of the video": map}
+    with open(f"{gv.Params.PATH_RUN}results.json", "w") as file:
+        json.dump(results, file)
