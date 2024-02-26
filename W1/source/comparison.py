@@ -13,7 +13,6 @@ cap = cv2.VideoCapture(VIDEO_FILE)
 with open(ANNOTATIONS_FILE) as f:
     annotations = json.load(f)
 
-# Assuming annotations are organized by frame index
 def get_annotations_for_frame(frame_index):
     # Convert string coordinates to integers
     annotations_int = {int(k): v for k, v in annotations.items()}
