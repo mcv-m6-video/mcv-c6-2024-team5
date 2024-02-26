@@ -3,14 +3,14 @@ import source.global_variables as gv
 
 ## VISUALIZATION FUNCTIONS
 
-def show_binary_frames(binary_frames, total_frames, gt, preds, aps):
+def show_binary_frames(binary_frames, total_frames, gt, preds, aps, map):
     for i in range(int(total_frames * gv.Params.FRAMES_PERCENTAGE), total_frames):
         binary_frame = binary_frames[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)]
         # Change to BGR for visualization
         binary_frame = cv2.cvtColor(binary_frame, cv2.COLOR_GRAY2BGR)
         binary_frame = add_rectangles_to_frame(binary_frame, gt[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)], (0, 0, 255))
         binary_frame = add_rectangles_to_frame(binary_frame, preds[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)], (0, 255, 0))
-        put_text_top_left(binary_frame, f"AP: {aps[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)]:.5f}, Frame: {i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)}")
+        put_text_top_left(binary_frame, f"AP: {aps[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)]:.5f}, Frame: {i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)}. mAP of full video: {map:.5f}")
         cv2.imshow('binary_frame', binary_frame)
         cv2.waitKey(0)
 
