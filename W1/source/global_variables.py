@@ -28,8 +28,8 @@ def init():
     parser.add_argument('--alpha', type=float, default=3, help='Alpha value for the binary frames computation')
     parser.add_argument('--adaptive-modelling', action='store_true', default=False, help='Whether to use adaptive modelling')
     parser.add_argument('--rho', type=float, default=0.4, help='Rho value for the binary frames computation')
-    parser.add_argument('--color', action='store_true', default=True, help='Whether to use RGB color for the binary frames computation')
-    parser.add_argument('--color-space', type=str, default="hsv", options=["rgb", "hsv", "yuv", "lab", "ycrcb"], help="Color space to use for the binary frames computation")
+    parser.add_argument('--color', action='store_true', default=True, help='Whether to use color for the binary frames computation')
+    parser.add_argument('--color-space', type=str, default="hsv", choices=["rgb", "hsv", "yuv", "lab", "ycrcb"], help="Color space to use for the binary frames computation")
     parser.add_argument('--show-binary-frames', action='store_true', default=True, help='Whether to show the binary frames')
     parser.add_argument('--tag', type=str, default="", help='Tag for the output folder')
     args = parser.parse_args()
@@ -44,7 +44,7 @@ def init():
         RHO = args.rho
         COLOR = args.color
         COLOR_TAG = "color" if COLOR else "grayscale"
-        COLOR_SPACE = args.color_space 
+        COLOR_SPACE = args.color_space if COLOR else ""
         SHOW_BINARY_FRAMES = args.show_binary_frames
         TAG = args.tag
 
