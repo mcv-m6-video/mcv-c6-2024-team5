@@ -34,8 +34,8 @@ def init_output_folder():
 
 def save_mean_std(mean, std, start=True):
     phase_tag = "start" if start else "end"
-    np.save(f"{gv.PATH_TO_TMP}mean_{phase_tag}_{gv.Params.COLOR_TAG}_alpha{str(gv.Params.ALPHA)}.npy", mean)
-    np.save(f"{gv.PATH_TO_TMP}std_{phase_tag}_{gv.Params.COLOR_TAG}_alpha{str(gv.Params.ALPHA)}.npy", std)
+    np.save(f"{gv.PATH_TO_TMP}mean_{phase_tag}_{gv.Params.COLOR_TAG}.npy", mean)
+    np.save(f"{gv.PATH_TO_TMP}std_{phase_tag}_{gv.Params.COLOR_TAG}.npy", std)
 
 def save_visualizations(mean_to_viz, std_to_viz, start=True):
     phase_tag = "start" if start else "end"
