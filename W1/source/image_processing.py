@@ -4,6 +4,21 @@ import source.global_variables as gv
 
 ## PROCESSING FUNCTIONS
 
+def get_relevant_color(frame):
+    if gv.Params.COLOR:
+        if gv.Params.COLOR_SPACE == "rgb":
+            return frame
+        elif gv.Params.COLOR_SPACE == "hsv":
+            return cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        elif gv.Params.COLOR_SPACE == "yuv":
+            return cv2.cvtColor(frame, cv2.COLOR_BGR2YUV)
+        elif gv.Params.COLOR_SPACE == "lab":
+            return cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
+        elif gv.Params.COLOR_SPACE == "ycrcb":
+            return cv2.cvtColor(frame, cv2.COLOR_BGR2YCrCb)
+    else:
+        return cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
 def process_frames(cap, total_frames):
     frames = []
     print(f"Processing {int(total_frames * gv.Params.FRAMES_PERCENTAGE)} frames for background modelling ({int(gv.Params.FRAMES_PERCENTAGE * 100)}% of the video)")
@@ -11,8 +26,7 @@ def process_frames(cap, total_frames):
         ret, frame = cap.read()
         if not ret:
             break
-        if not gv.Params.COLOR:
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        frame = get_relevant_color(frame)
         
         # Log each 50 frames
         if i % 50 == 0:
@@ -33,7 +47,7 @@ def compute_mean_std(frames):
     mean /= len(frames)
     std = np.sqrt((sq_mean / len(frames)) - np.square(mean))
     
-    # ! OLD and slow method
+    # ! OLD and slow method (also RAM consuming mostly for color frames)
     # mean = np.mean(frames, axis=0)
     # std = np.std(frames, axis=0)
 
@@ -51,15 +65,36 @@ def generate_binary_frames(cap, total_frames, mean, std):
         ret, frame = cap.read()
         if not ret:
             break
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        #? If condition is true, then set the pixel to 255, so it is white -> Foreground
-        binary_frame = (abs(frame - mean) >= gv.Params.ALPHA * (std + 2)).astype(np.uint8) * 255
+        frame = get_relevant_color(frame)
+
+        # Compute absolute difference and threshold
+        if gv.Params.COLOR:
+            # Process each color channel
+            binary_frame = np.zeros_like(frame, dtype=np.uint8)
+            for c in range(frame.shape[2]):  # Assuming frame is (H, W, C)
+                channel_diff = abs(frame[:,:,c] - mean[:,:,c])
+                binary_channel = (channel_diff >= gv.Params.ALPHA * (std[:,:,c] + 2)).astype(np.uint8) * 255
+                binary_frame[:,:,c] = binary_channel
+            # Combine binary masks from all channels
+            binary_frame = np.max(binary_frame, axis=2).astype(np.uint8)
+        else:
+            #? If condition is true, then set the pixel to 255, so it is white -> Foreground
+            binary_frame = (abs(frame - mean) >= gv.Params.ALPHA * (std + 2)).astype(np.uint8) * 255
+
         if gv.Params.ADAPTIVE_MODELLING:
             # Update mean and std only for the pixels classified as Background (0)
-            aux_mean = (1 - gv.Params.RHO) * mean + gv.Params.RHO * frame
-            aux_std = np.sqrt((1 - gv.Params.RHO) * std ** 2 + gv.Params.RHO * (frame - mean) ** 2)
-            mean = np.where(binary_frame == 0, aux_mean, mean)
-            std = np.where(binary_frame == 0, aux_std, std)
+            if gv.Params.COLOR:
+                for c in range(frame.shape[2]):
+                    aux_mean = (1 - gv.Params.RHO) * mean[:,:,c] + gv.Params.RHO * frame[:,:,c]
+                    aux_std = np.sqrt((1 - gv.Params.RHO) * std[:,:,c] ** 2 + gv.Params.RHO * (frame[:,:,c] - mean[:,:,c]) ** 2)
+                    update_mask = binary_frame == 0
+                    mean[:,:,c] = np.where(update_mask, aux_mean, mean[:,:,c])
+                    std[:,:,c] = np.where(update_mask, aux_std, std[:,:,c])
+            else:
+                aux_mean = (1 - gv.Params.RHO) * mean + gv.Params.RHO * frame
+                aux_std = np.sqrt((1 - gv.Params.RHO) * std ** 2 + gv.Params.RHO * (frame - mean) ** 2)
+                mean = np.where(binary_frame == 0, aux_mean, mean)
+                std = np.where(binary_frame == 0, aux_std, std)
 
         binary_frame = post_processing(binary_frame)
         binary_frames.append(binary_frame)
