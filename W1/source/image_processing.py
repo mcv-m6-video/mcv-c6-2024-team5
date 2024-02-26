@@ -46,11 +46,6 @@ def generate_binary_frames(cap, total_frames, mean, std):
     return binary_frames
 
 def post_processing(binary_frame):
-    # cv2.namedWindow('Before', cv2.WINDOW_NORMAL)
-    # cv2.namedWindow('After', cv2.WINDOW_NORMAL)
-    # cv2.resizeWindow('Before', 540, 960)
-    # cv2.resizeWindow('After', 540, 960)
-    # cv2.imshow('Before', binary_frame)
     # Erotion to remove noise
     kernel = np.ones((5, 5), np.uint8)
     binary_frame = cv2.morphologyEx(binary_frame, cv2.MORPH_ERODE, kernel)
@@ -60,12 +55,13 @@ def post_processing(binary_frame):
     # Close with a vertical kernel to join the low part of the cars with the high part
     kernel = np.ones((53, 3), np.uint8)
     binary_frame = cv2.morphologyEx(binary_frame, cv2.MORPH_CLOSE, kernel)
-    # bboxes = find_connected_components(binary_frame)
-    # for bbox in bboxes:
-    #     cv2.rectangle(binary_frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (255, 255, 255), 2)
-    # cv2.imshow('After', binary_frame)
-    # cv2.waitKey(1)
     return binary_frame
+
+def predict_bboxes(binary_frames):
+    bounding_boxes = []
+    for binary_frame in binary_frames:
+        bounding_boxes.append(find_connected_components(binary_frame))
+    return bounding_boxes
 
 def find_connected_components(binary_frame):
     """Finds connected components in a binary frame and returns a list of bounding boxes"""
@@ -74,7 +70,7 @@ def find_connected_components(binary_frame):
     bounding_boxes = []
     for label in range(1, conn):  # Skip background label (0)
         x, y, w, h, area = values[label]
-        # Hand-picked thresholds
+        # Hand-picked thresholds (can be adjusted)
         if area > 500 and area < 100000 and w > h:
             bounding_boxes.append((x, y, x + w, y + h))
     return bounding_boxes

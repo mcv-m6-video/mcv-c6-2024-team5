@@ -1,8 +1,9 @@
 import cv2
 
-from source.data_io import load_video, load_frame_dict, load_mean_std, save_mean_std, save_visualizations, init_output_folder
-from source.image_processing import process_frames, compute_mean_std, truncate_values, generate_binary_frames
+from source.data_io import load_video, load_frame_dict, load_mean_std, save_mean_std, save_visualizations, gt_bboxes, init_output_folder
+from source.image_processing import process_frames, compute_mean_std, truncate_values, generate_binary_frames, predict_bboxes
 from source.visualization import show_binary_frames
+from source.metrics import compute_video_ap
 import source.global_variables as gv
 
 def main():
@@ -30,8 +31,11 @@ def main():
     save_visualizations(mean_to_viz, std_to_viz)
     
     binary_frames = generate_binary_frames(cap, total_frames, mean, std)
+    preds = predict_bboxes(binary_frames)
+    gt = gt_bboxes(frame_dict, total_frames)
+    aps = compute_video_ap(gt, preds)
     if gv.Params.SHOW_BINARY_FRAMES:
-        show_binary_frames(binary_frames, frame_dict, total_frames)
+        show_binary_frames(binary_frames, total_frames, gt, preds, aps)
     
     # If adaptive modelling is enabled, save the mean and std for the end of the video
     if gv.Params.ADAPTIVE_MODELLING:

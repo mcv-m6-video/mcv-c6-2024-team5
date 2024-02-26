@@ -41,3 +41,18 @@ def save_visualizations(mean_to_viz, std_to_viz, start=True):
     phase_tag = "start" if start else "end"
     cv2.imwrite(f"{gv.Params.PATH_RUN}mean_{phase_tag}.png", mean_to_viz)
     cv2.imwrite(f"{gv.Params.PATH_RUN}std_{phase_tag}.png", std_to_viz)
+
+def gt_bbox(frame_dict, frame_number):
+    bboxes = []
+    for car_id, car in frame_dict[str(frame_number)].items():
+        if car['is_parked']:
+            continue
+        x1, y1, x2, y2 = int(car['xtl']), int(car['ytl']), int(car['xbr']), int(car['ybr'])
+        bboxes.append((x1, y1, x2, y2))
+    return bboxes
+
+def gt_bboxes(frame_dict, total_frames):
+    gt = []
+    for i in range(int(total_frames * gv.Params.FRAMES_PERCENTAGE), total_frames):
+        gt.append(gt_bbox(frame_dict, i))
+    return gt
