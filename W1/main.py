@@ -43,7 +43,7 @@ def main():
     # If adaptive modelling is enabled, save the mean and std for the end of the video
     if gv.Params.ADAPTIVE_MODELLING:
         mean_to_viz, std_to_viz = truncate_values(mean, std)
-        show_frame_with_pred(cap, binary_frames, total_frames, gt, preds, aps, map)
+        # show_frame_with_pred(cap, binary_frames, total_frames, gt, preds, aps, map)
         save_visualizations(mean_to_viz, std_to_viz, start=False)
 
     cap.release()
