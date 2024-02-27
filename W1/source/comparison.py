@@ -1,108 +1,26 @@
 import cv2
 import json
 import numpy as np
+import matplotlib.pyplot as plt
+import source.global_variables as gv
+from source.data_io import gt_bbox, gt_bboxes_comparison, calculate_mAP_comparison
+from source.visualization import show_binary_frames, add_rectangles_to_frame, put_text_top_left
+from source.metrics import calculate_iou
+from source.data_io import load_video, load_frame_dict
+
+# Import and initialize Params
+gv.init()
 
 # Define paths
 VIDEO_FILE = './data/AICity_data/train/S03/c010/vdo.avi'
-ANNOTATIONS_FILE = './output/frame_dict.json'
-
-# Create a VideoCapture object
-cap = cv2.VideoCapture(VIDEO_FILE)
+ANNOTATIONS_FILE = './frame_dict.json'
 
 # Load annotations from JSON file
-with open(ANNOTATIONS_FILE) as f:
-    annotations = json.load(f)
+frame_dict = load_frame_dict()
 
-def get_annotations_for_frame(frame_index):
-    # Convert string coordinates to integers
-    annotations_int = {int(k): v for k, v in annotations.items()}
-    return annotations_int.get(frame_index, [])
-
-def calculate_iou(box1, box2):
-    """
-    Calculate Intersection over Union (IoU) between two bounding boxes with the format (x1, y1, x2, y2)
-    """
-    x1, y1, w1, h1 = box1
-    x2, y2, w2, h2 = box2
-
-    w_I = max(0, min(x1 + w1, x2 + w2) - max(x1, x2))
-    h_I = max(0, min(y1 + h1, y2 + h2) - max(y1, y2))
-    I = w_I * h_I
-
-    U = w1 * h1 + w2 * h2 - I
-
-    return I / U
-
-
-def compute_ap(gt_boxes, pred_boxes):
-    """
-    Compute the average precision (AP) of a model
-    :param gt_boxes:
-    :param pred_boxes:
-    :return:
-    """
-        
-    if not isinstance(gt_boxes, list):
-        gt_boxes = []
-    if not isinstance(pred_boxes, list):
-        pred_boxes = []
-
-    # Initialize variables
-    tp = np.zeros(len(pred_boxes))
-    fp = np.zeros(len(pred_boxes))
-    gt_matched = np.zeros(len(gt_boxes))
-
-    # Iterate over the predicted boxes
-    for i, pred_box in enumerate(pred_boxes):
-        ious = [calculate_iou(pred_box, gt_box) for gt_box in gt_boxes]
-        if len(ious) == 0:
-            fp[i] = 1
-            continue
-        max_iou = max(ious)
-        max_iou_idx = ious.index(max_iou)
-
-        if max_iou >= 0.5 and not gt_matched[max_iou_idx]:
-            tp[i] = 1
-            gt_matched[max_iou_idx] = 1
-        else:
-            fp[i] = 1
-
-    tp = np.cumsum(tp)
-    fp = np.cumsum(fp)
-    recall = tp / len(gt_boxes)
-    precision = tp / (tp + fp)
-
-    # Generate graph with the 11-point interpolated precision-recall curve
-    recall_interp = np.linspace(0, 1, 11)
-    precision_interp = np.zeros(11)
-    for i, r in enumerate(recall_interp):
-        array_precision = precision[recall >= r]
-        if len(array_precision) == 0:
-            precision_interp[i] = 0
-        else:
-            # precision_interp[i] = max(precision[recall >= r])
-            precision_interp[i] = max(array_precision)
-
-    ap = np.mean(precision_interp)
-    return ap
-
-
-def compute_video_ap(gt, pred):
-    """
-    Compute the average precision (AP) of a model for a video
-    :param gt: list of lists of ground truth bounding boxes
-    :param pred: list of lists of predicted bounding boxes
-    :return: list of average precision values
-    """
-    aps = []
-    for i, (gt_boxes, pred_boxes) in enumerate(zip(gt, pred)):
-        aps.append(compute_ap(gt_boxes, pred_boxes))
-    return aps
-
-
-def Background_subtraction(background_subtractor):
-
-    target_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) * 0.25)  # 25% of total frames
+def Background_subtraction(background_subtractor, cap, frame_dict, total_frames, percentage):
+    # Calculate the target number of frames
+    target_frames = int(total_frames * percentage)  
     frame_counter = 0
 
     backSub = None
@@ -120,19 +38,28 @@ def Background_subtraction(background_subtractor):
     elif background_subtractor == 'GSOC':
         backSub = cv2.bgsegm.createBackgroundSubtractorGSOC(mc=5)
 
+    # For mAP calculation
+    annotations_for_calculation = []  
+    all_predictions = []  
 
-    annotations_for_calculation = []  # For mAP calculation
-    all_predictions = []  # For mAP calculation
+    # Get the ground truth bounding boxes for frames based on percentage
+    gt_annotations = gt_bboxes_comparison(frame_dict, total_frames, percentage)
 
     while True:
         ret, frame = cap.read()
         if not ret:
             break
 
-        frame_index = int(cap.get(cv2.CAP_PROP_POS_FRAMES))  # Current frame index
+        # Current frame index
+        frame_index = int(cap.get(cv2.CAP_PROP_POS_FRAMES))  
+
+        # Check if frame index is within the range of ground truth annotations
+        if frame_index - 1 >= len(gt_annotations):
+            print("Frame index out of range. Exiting loop.")
+            break
 
         # Get annotations for current frame
-        gt_boxes = get_annotations_for_frame(frame_index)
+        gt_boxes = gt_annotations[frame_index - 1]
 
         # Apply the background subtractor to get the foreground mask
         fgMask = backSub.apply(frame)
@@ -150,18 +77,18 @@ def Background_subtraction(background_subtractor):
             x, y, w, h = cv2.boundingRect(contour)
             
             # Filter out small detections
-            min_area_threshold = 700  # Adjust as needed
+            min_area_threshold = 600  
             if cv2.contourArea(contour) < min_area_threshold:
                 continue
 
-            # # Filter out big detections
-            # max_area_threshold = 5000  # Adjust as needed
-            # if cv2.contourArea(contour) > max_area_threshold:
-            #     continue
-      
-            # Filter out vertical boxes (assuming bikes)
+            # Filter out vertical boxes (bikes)
             aspect_ratio = w / h
-            if aspect_ratio < 1.0:  # If taller than wide, likely a bike
+            if aspect_ratio < 1.0:  
+                continue
+
+            # Filter out big horizontal boxes 
+            aspect_ratio = w / h
+            if aspect_ratio > 2.5:  
                 continue
 
             # Add annotations for mAP calculation
@@ -170,17 +97,21 @@ def Background_subtraction(background_subtractor):
             # Add bounding box for predictions
             bboxes_pred.append((x, y, x + w, y + h))
 
-        all_predictions.extend(bboxes_pred)
+        all_predictions.append(bboxes_pred)
 
         # Draw bounding boxes on binary image
-        binary_with_boxes = cv2.cvtColor(binary_img, cv2.COLOR_GRAY2RGB)
+        binary_with_boxes = cv2.cvtColor(binary_img, cv2.COLOR_GRAY2BGR)
         for xtl, ytl, xbr, ybr in bboxes_pred:
             cv2.rectangle(binary_with_boxes, (xtl, ytl), (xbr, ybr), (0, 255, 0), 2)  # Green for predicted
+        for xtl, ytl, xbr, ybr in gt_boxes:
+            cv2.rectangle(binary_with_boxes, (xtl, ytl), (xbr, ybr), (0, 0, 255), 2)  # Red for ground truth
 
         # Draw bounding boxes on original frame
         frame_with_boxes = frame.copy()
         for xtl, ytl, xbr, ybr in bboxes_pred:
             cv2.rectangle(frame_with_boxes, (xtl, ytl), (xbr, ybr), (0, 255, 0), 2)  # Green for predicted
+        for xtl, ytl, xbr, ybr in gt_boxes:
+            cv2.rectangle(frame_with_boxes, (xtl, ytl), (xbr, ybr), (0, 0, 255), 2)  # Red for ground truth
 
         cv2.imshow('Original Image with Bounding Boxes', frame_with_boxes)
         cv2.imshow('Binary Image with Bounding Boxes', binary_with_boxes)
@@ -193,18 +124,53 @@ def Background_subtraction(background_subtractor):
         if frame_counter >= target_frames:
             break
 
-    # Compute video AP
-    # video_aps = compute_video_ap(annotations_for_calculation, all_predictions)
-    # print("Video APs:", video_aps)
-
     # Calculate mAP
-    mAP = compute_ap(annotations_for_calculation, all_predictions)
+    aps, mAP = calculate_mAP_comparison(gt_annotations, all_predictions)
     print("Mean Average Precision (mAP):", mAP)
 
     # Release the VideoCapture and destroy windows
     cap.release()
     cv2.destroyAllWindows()
 
-# Run the background subtraction with the chosen method
-background_subtractor = 'GSOC'  # Change this to the desired method
-Background_subtraction(background_subtractor)
+    # # Create a new VideoCapture to show the frames with predictions
+    # cap = cv2.VideoCapture(VIDEO_FILE)
+    # if all_predictions:
+    #     show_frame_with_pred_comparison(cap, all_predictions, total_frames, gt_annotations, all_predictions, aps, mAP)
+    
+    # Return the calculated mAP
+    return mAP  
+
+
+# List of background subtraction methods to compare
+background_subtractors = ['MOG', 'MOG2', 'GMG', 'KNN', 'CNT', 'GSOC']
+# Store mAP results for each method
+mAP_results = []  
+
+# Run background subtraction for each method with the chosen percentage
+for method in background_subtractors:
+    print('Running method: ', method)
+    # Create a new VideoCapture for each method
+    cap = load_video()  
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    percentage = gv.Params.FRAMES_PERCENTAGE  
+    mAP = Background_subtraction(method, cap, frame_dict, total_frames, percentage)
+    mAP_results.append((method, percentage, mAP))
+
+# Plot the mAP results for comparison
+method_labels = [f"{method} (mAP: {mAP:.3f})" for method, percentage, mAP in mAP_results]
+mAP_values = [mAP for _, _, mAP in mAP_results]
+percentage_str = str(percentage*100)
+
+plt.bar(method_labels, mAP_values)
+plt.xlabel('Background Subtraction Method')
+plt.ylabel('Mean Average Precision (mAP)')
+plt.title(f'Comparison of Mean Average Precision (mAP) for Different Background Subtraction Methods with Frame Percentage = {percentage_str}%')
+plt.xticks(rotation=45, ha='right', fontsize=8)
+plt.ylim(0, 1)  
+plt.tight_layout()
+
+# Save the plot
+plt.savefig('./output/mAP_comparison_methods.png')
+
+# Show the plot
+plt.show()
