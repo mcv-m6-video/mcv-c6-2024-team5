@@ -1,1 +1,1 @@
-{"RECOMPUTE_MEAN_STD": false, "FRAMES_PERCENTAGE": 0.25, "ALPHA": 5.0, "ADAPTIVE_MODELLING": false, "MODELLING_TAG": "static", "RHO": 0.4, "COLOR": false, "COLOR_TAG": "grayscale", "SHOW_BINARY_FRAMES": false, "TAG": "", "PATH_RUN": "./output/_static_grayscale_alpha=5.0/"}
+{"RECOMPUTE_MEAN_STD": true, "FRAMES_PERCENTAGE": 0.25, "ALPHA": 5.0, "ADAPTIVE_MODELLING": false, "MODELLING_TAG": "static", "RHO": 0.4, "COLOR": false, "COLOR_TAG": "grayscale", "COLOR_SPACE": "", "SHOW_BINARY_FRAMES": true, "TAG": "", "PATH_RUN": "./output/_static_grayscale_alpha=5.0/"}

@@ -1,210 +1,210 @@
 [
-        {
+    {
         "--alpha": 3.63,
         "--rho": 0.11,
         "--recompute-mean-std": true,
-        "--show-binary-frames": true,
+        "--show-binary-frames": false,
         "--adaptive-modelling": true
     },
     {
-        "--alpha": 3.5,
-        "--rho": 0.43,
-        "--recompute-mean-std": true,
-        "--show-binary-frames": true,
-        "--adaptive-modelling": true
-    },
-    {
-        "--alpha": 3.32,
-        "--rho": 0.46,
-        "--recompute-mean-std": true,
-        "--show-binary-frames": true,
-        "--adaptive-modelling": true
-    },
-    {
-        "--alpha": 3.89,
-        "--rho": 0.38,
-        "--recompute-mean-std": true,
-        "--show-binary-frames": true,
-        "--adaptive-modelling": true
-    },
-    {
-        "--alpha": 2.07,
-        "--rho": 0.02,
+        "--alpha": 5.29,
+        "--rho": 0.22,
         "--recompute-mean-std": true,
         "--show-binary-frames": false,
         "--adaptive-modelling": true
     },
     {
-        "--alpha": 3.65,
-        "--rho": 0.34,
-        "--recompute-mean-std": true,
-        "--show-binary-frames": false,
-        "--adaptive-modelling": true
-    },
-    {
-        "--alpha": 3.87,
-        "--rho": 0.32,
-        "--recompute-mean-std": true,
-        "--show-binary-frames": false,
-        "--adaptive-modelling": true
-    },
-    {
-        "--alpha": 2.61,
-        "--rho": 0.43,
-        "--recompute-mean-std": true,
-        "--show-binary-frames": false,
-        "--adaptive-modelling": true
-    },
-    {
-        "--alpha": 3.04,
-        "--rho": 0.38,
-        "--recompute-mean-std": true,
-        "--show-binary-frames": false,
-        "--adaptive-modelling": true
-    },
-    {
-        "--alpha": 5.82,
-        "--rho": 0.2,
-        "--recompute-mean-std": true,
-        "--show-binary-frames": false,
-        "--adaptive-modelling": true
-    },
-    {
-        "--alpha": 5.66,
-        "--rho": 0.15,
-        "--recompute-mean-std": true,
-        "--show-binary-frames": false,
-        "--adaptive-modelling": true
-    },
-    {
-        "--alpha": 2.71,
+        "--alpha": 4.64,
         "--rho": 0.26,
         "--recompute-mean-std": true,
         "--show-binary-frames": false,
         "--adaptive-modelling": true
     },
     {
-        "--alpha": 4.99,
-        "--rho": 0.12,
-        "--recompute-mean-std": true,
-        "--show-binary-frames": false,
-        "--adaptive-modelling": true
-    },
-    {
-        "--alpha": 4.53,
+        "--alpha": 6.71,
         "--rho": 0.33,
         "--recompute-mean-std": true,
         "--show-binary-frames": false,
         "--adaptive-modelling": true
     },
     {
-        "--alpha": 2.19,
-        "--rho": 0.35,
+        "--alpha": 5.16,
+        "--rho": 0.08,
         "--recompute-mean-std": true,
         "--show-binary-frames": false,
         "--adaptive-modelling": true
     },
     {
-        "--alpha": 3.52,
-        "--rho": 0.09,
+        "--alpha": 5.32,
+        "--rho": 0.05,
         "--recompute-mean-std": true,
         "--show-binary-frames": false,
         "--adaptive-modelling": true
     },
     {
-        "--alpha": 5.11,
-        "--rho": 0.06,
-        "--recompute-mean-std": true,
-        "--show-binary-frames": false,
-        "--adaptive-modelling": true
-    },
-    {
-        "--alpha": 3.38,
-        "--rho": 0.45,
-        "--recompute-mean-std": true,
-        "--show-binary-frames": false,
-        "--adaptive-modelling": true
-    },
-    {
-        "--alpha": 3.73,
-        "--rho": 0.31,
-        "--recompute-mean-std": true,
-        "--show-binary-frames": false,
-        "--adaptive-modelling": true
-    },
-    {
-        "--alpha": 2.76,
-        "--rho": 0.45,
-        "--recompute-mean-std": true,
-        "--show-binary-frames": false,
-        "--adaptive-modelling": true
-    },
-    {
-        "--alpha": 5.73,
-        "--rho": 0.04,
-        "--recompute-mean-std": true,
-        "--show-binary-frames": false,
-        "--adaptive-modelling": true
-    },
-    {
-        "--alpha": 3.01,
-        "--rho": 0.09,
-        "--recompute-mean-std": true,
-        "--show-binary-frames": false,
-        "--adaptive-modelling": true
-    },
-    {
-        "--alpha": 3.24,
+        "--alpha": 3.3,
         "--rho": 0.43,
         "--recompute-mean-std": true,
         "--show-binary-frames": false,
         "--adaptive-modelling": true
     },
     {
-        "--alpha": 5.98,
-        "--rho": 0.25,
+        "--alpha": 5.31,
+        "--rho": 0.01,
         "--recompute-mean-std": true,
         "--show-binary-frames": false,
         "--adaptive-modelling": true
     },
     {
-        "--alpha": 4.83,
-        "--rho": 0.3,
+        "--alpha": 5.28,
+        "--rho": 0.47,
         "--recompute-mean-std": true,
         "--show-binary-frames": false,
         "--adaptive-modelling": true
     },
     {
-        "--alpha": 4.74,
-        "--rho": 0.4,
+        "--alpha": 3.18,
+        "--rho": 0.16,
         "--recompute-mean-std": true,
         "--show-binary-frames": false,
         "--adaptive-modelling": true
     },
     {
-        "--alpha": 3.13,
-        "--rho": 0.28,
-        "--recompute-mean-std": true,
-        "--show-binary-frames": false,
-        "--adaptive-modelling": true
-    },
-    {
-        "--alpha": 3.1,
+        "--alpha": 6.25,
         "--rho": 0.07,
         "--recompute-mean-std": true,
         "--show-binary-frames": false,
         "--adaptive-modelling": true
     },
     {
-        "--alpha": 4.55,
+        "--alpha": 5.97,
+        "--rho": 0.16,
+        "--recompute-mean-std": true,
+        "--show-binary-frames": false,
+        "--adaptive-modelling": true
+    },
+    {
+        "--alpha": 6.0,
+        "--rho": 0.5,
+        "--recompute-mean-std": true,
+        "--show-binary-frames": false,
+        "--adaptive-modelling": true
+    },
+    {
+        "--alpha": 4.02,
+        "--rho": 0.48,
+        "--recompute-mean-std": true,
+        "--show-binary-frames": false,
+        "--adaptive-modelling": true
+    },
+    {
+        "--alpha": 3.41,
+        "--rho": 0.25,
+        "--recompute-mean-std": true,
+        "--show-binary-frames": false,
+        "--adaptive-modelling": true
+    },
+    {
+        "--alpha": 3.66,
         "--rho": 0.42,
         "--recompute-mean-std": true,
         "--show-binary-frames": false,
         "--adaptive-modelling": true
     },
     {
-        "--alpha": 2.09,
-        "--rho": 0.12,
+        "--alpha": 3.59,
+        "--rho": 0.18,
+        "--recompute-mean-std": true,
+        "--show-binary-frames": false,
+        "--adaptive-modelling": true
+    },
+    {
+        "--alpha": 4.51,
+        "--rho": 0.13,
+        "--recompute-mean-std": true,
+        "--show-binary-frames": false,
+        "--adaptive-modelling": true
+    },
+    {
+        "--alpha": 6.32,
+        "--rho": 0.15,
+        "--recompute-mean-std": true,
+        "--show-binary-frames": false,
+        "--adaptive-modelling": true
+    },
+    {
+        "--alpha": 4.4,
+        "--rho": 0.34,
+        "--recompute-mean-std": true,
+        "--show-binary-frames": false,
+        "--adaptive-modelling": true
+    },
+    {
+        "--alpha": 4.07,
+        "--rho": 0.13,
+        "--recompute-mean-std": true,
+        "--show-binary-frames": false,
+        "--adaptive-modelling": true
+    },
+    {
+        "--alpha": 4.3,
+        "--rho": 0.4,
+        "--recompute-mean-std": true,
+        "--show-binary-frames": false,
+        "--adaptive-modelling": true
+    },
+    {
+        "--alpha": 5.63,
+        "--rho": 0.04,
+        "--recompute-mean-std": true,
+        "--show-binary-frames": false,
+        "--adaptive-modelling": true
+    },
+    {
+        "--alpha": 5.4,
+        "--rho": 0.13,
+        "--recompute-mean-std": true,
+        "--show-binary-frames": false,
+        "--adaptive-modelling": true
+    },
+    {
+        "--alpha": 3.58,
+        "--rho": 0.3,
+        "--recompute-mean-std": true,
+        "--show-binary-frames": false,
+        "--adaptive-modelling": true
+    },
+    {
+        "--alpha": 4.58,
+        "--rho": 0.06,
+        "--recompute-mean-std": true,
+        "--show-binary-frames": false,
+        "--adaptive-modelling": true
+    },
+    {
+        "--alpha": 4.63,
+        "--rho": 0.49,
+        "--recompute-mean-std": true,
+        "--show-binary-frames": false,
+        "--adaptive-modelling": true
+    },
+    {
+        "--alpha": 5.92,
+        "--rho": 0.2,
+        "--recompute-mean-std": true,
+        "--show-binary-frames": false,
+        "--adaptive-modelling": true
+    },
+    {
+        "--alpha": 5.23,
+        "--rho": 0.47,
+        "--recompute-mean-std": true,
+        "--show-binary-frames": false,
+        "--adaptive-modelling": true
+    },
+    {
+        "--alpha": 5.65,
+        "--rho": 0.31,
         "--recompute-mean-std": true,
         "--show-binary-frames": false,
         "--adaptive-modelling": true

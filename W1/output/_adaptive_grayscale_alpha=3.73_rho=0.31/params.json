@@ -1,1 +1,0 @@
-{"RECOMPUTE_MEAN_STD": true, "FRAMES_PERCENTAGE": 0.25, "ALPHA": 3.73, "ADAPTIVE_MODELLING": true, "MODELLING_TAG": "adaptive", "RHO": 0.31, "COLOR": false, "COLOR_TAG": "grayscale", "COLOR_SPACE": "", "SHOW_BINARY_FRAMES": false, "TAG": "", "PATH_RUN": "./output/_adaptive_grayscale_alpha=3.73_rho=0.31/"}

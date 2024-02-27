@@ -1,1 +1,0 @@
-{"RECOMPUTE_MEAN_STD": true, "FRAMES_PERCENTAGE": 0.25, "ALPHA": 3, "ADAPTIVE_MODELLING": false, "MODELLING_TAG": "static", "RHO": 0.4, "COLOR": true, "COLOR_TAG": "color", "COLOR_SPACE": "hsv", "SHOW_BINARY_FRAMES": true, "TAG": "", "PATH_RUN": "./output/_static_color_hsv_alpha=3/"}
