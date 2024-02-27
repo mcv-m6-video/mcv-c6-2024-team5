@@ -59,10 +59,10 @@ def gt_bboxes(frame_dict, total_frames):
         gt.append(gt_bbox(frame_dict, i))
     return gt
 
-def calculate_mAP(gts, aps):
+def calculate_mAP(gts, preds, aps):
     valid_aps = []
-    for gt, ap in zip(gts, aps):
-        if len(gt) > 0:
+    for gt, pred, ap in zip(gts, preds, aps):
+        if len(gt) > 0 or len(pred) > 0:
             valid_aps.append(ap)
     return np.mean(valid_aps)
 

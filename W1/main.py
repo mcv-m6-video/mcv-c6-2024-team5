@@ -34,7 +34,7 @@ def main():
     preds = predict_bboxes(binary_frames)
     gt = gt_bboxes(frame_dict, total_frames)
     aps = compute_video_ap(gt, preds)
-    map = calculate_mAP(gt, aps)
+    map = calculate_mAP(gt, preds, aps)
     save_metrics(aps, map)
     if gv.Params.SHOW_BINARY_FRAMES:
         show_frame_with_pred(cap, binary_frames, total_frames, gt, preds, aps, map)
