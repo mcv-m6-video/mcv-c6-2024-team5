@@ -4,6 +4,7 @@ import json
 import os
 
 import source.global_variables as gv
+from source.metrics import compute_ap
 
 ## LOADING FUNCTIONS
 
@@ -59,12 +60,48 @@ def gt_bboxes(frame_dict, total_frames):
         gt.append(gt_bbox(frame_dict, i))
     return gt
 
+def gt_bboxes_comparison(frame_dict, total_frames, percentage_frames):
+    """
+    Get ground truth bounding boxes for each frame based on the given percentage of frames.
+    :param frame_dict: Dictionary containing frame annotations
+    :param total_frames: Total number of frames in the video
+    :param percentage_frames: Percentage of frames to consider
+    :return: List of ground truth bounding boxes for each frame
+    """
+    gt = []
+    frame_indices = sorted([int(i) for i in frame_dict.keys()])
+
+    if percentage_frames < 1.0:
+        target_frames = int(total_frames * percentage_frames)
+        frame_indices = frame_indices[:target_frames]
+
+    for i in range(1, total_frames + 1):
+        if str(i) in frame_dict and i in frame_indices:
+            gt.append(gt_bbox(frame_dict, i))
+        else:
+            gt.append([])  # If frame annotation is missing or not in selected frames, append empty list
+    
+    return gt
+
 def calculate_mAP(gts, preds, aps):
     valid_aps = []
     for gt, pred, ap in zip(gts, preds, aps):
         if len(gt) > 0 or len(pred) > 0:
             valid_aps.append(ap)
     return np.mean(valid_aps)
+
+def calculate_mAP_comparison(gt_annotations, all_predictions):
+    """
+    Compute the mean Average Precision (mAP) given ground truth annotations and predicted bounding boxes.
+    """
+    aps = []
+    for gt_boxes, pred_boxes in zip(gt_annotations, all_predictions):
+        ap = compute_ap(gt_boxes, pred_boxes)
+        aps.append(ap)
+
+    map_value = np.mean(aps)  # Calculate mean AP for all frames (including those with no ground truth)
+
+    return aps, map_value
 
 def save_metrics(aps, map):
     results = {"aps": aps, "mAP of the video": map}
