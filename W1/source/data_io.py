@@ -117,7 +117,12 @@ def calculate_mAP_comparison(gt_annotations, all_predictions):
 
     return aps, map_value
 
-def save_metrics(aps, map):
+def save_metrics(aps, map, method=None):
     results = {"aps": aps, "mAP of the video": map}
-    with open(f"{gv.Params.PATH_RUN}results.json", "w") as file:
-        json.dump(results, file)
+    if method is not None:
+        with open(f"{gv.Params.PATH_RUN}results_{method}.json", "w") as file:
+            json.dump(results, file)
+    else:
+        with open(f"{gv.Params.PATH_RUN}results.json", "w") as file:
+            json.dump(results, file)
+

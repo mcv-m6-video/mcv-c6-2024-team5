@@ -1,7 +1,7 @@
 import cv2
 
 from source.data_io import load_video, load_frame_dict, load_mean_std, save_mean_std, save_visualizations, gt_bboxes, calculate_mAP, init_output_folder, save_metrics
-from source.image_processing import process_frames, compute_mean_std, truncate_values, generate_binary_frames, predict_bboxes
+from source.image_processing import process_frames, compute_mean_std, truncate_values, generate_binary_frames, predict_bboxes, soa_binary_frames
 from source.visualization import show_binary_frames, show_frame_with_pred
 from source.metrics import compute_video_ap
 import source.global_variables as gv
@@ -14,7 +14,26 @@ def main():
     cap = load_video()
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     frame_dict = load_frame_dict()
-    
+
+    if gv.Params.STATE_OF_THE_ART:
+        print("State of the art background subtraction method")
+        # Call the function for the state of the art background subtraction method
+        # List of background subtraction methods to compare
+        background_subtractors = ['MOG', 'MOG2', 'GMG', 'KNN', 'CNT', 'GSOC']
+        # Run background subtraction for each method with the chosen percentage
+        for method in background_subtractors:
+            print('Running method: ', method)
+            binary_frames = soa_binary_frames(cap, total_frames, method)
+            preds = predict_bboxes(binary_frames)
+            gt = gt_bboxes(frame_dict, total_frames)
+            aps = compute_video_ap(gt, preds)
+            map = calculate_mAP(gt, preds, aps)
+            save_metrics(aps, map, method)
+            if gv.Params.SHOW_BINARY_FRAMES:
+                show_frame_with_pred(cap, binary_frames, total_frames, gt, preds, aps, map)
+        return
+
+
     if gv.Params.RECOMPUTE_MEAN_STD:
         frames = process_frames(cap, total_frames)
         mean, std = compute_mean_std(frames)
