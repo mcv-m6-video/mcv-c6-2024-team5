@@ -29,23 +29,27 @@ def overlap_tracking(preds):
                 else:
                     max_iou = max(ious)
                     max_iou_idx = ious.index(max_iou)
-                    if max_iou >= 0.8:
+                    if max_iou >= 0.6:
                         pred_ids.append(prev_ids[max_iou_idx])
                     else:
                         pred_ids.append(ids)
                         ids += 1
-                        
+                      
         prev_ids = np.copy(pred_ids)
         list_of_ids.append(pred_ids)
 
     return list_of_ids
 
-def add_rectangles_to_frame_with_id(frame, boxes, color, ids):
-    for i, box in enumerate(boxes):
-        x1, y1, x2, y2 = box
-        cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
-        id = ids[i]
-        cv2.putText(frame, str(id), (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+def add_rectangles_to_frame_with_id(frame, boxes, color, ids=None):
+    if ids is None:
+        for x1, y1, x2, y2 in boxes:
+            cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+    else: 
+        for i, box in enumerate(boxes):
+            x1, y1, x2, y2 = box
+            cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+            id = ids[i]
+            cv2.putText(frame, str(id), (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
     return frame
 
 def show_tracking(cap, binary_frames,ids_tracking, total_frames, gt, preds, aps, map):
@@ -66,7 +70,8 @@ def show_tracking(cap, binary_frames,ids_tracking, total_frames, gt, preds, aps,
         # fill the binary_frame_color with the binary_frame items that were not zeros as pink
         binary_frame_color[binary_frame != 0] = [255, 0, 255]
         overlay = cv2.addWeighted(frame, 0.7, binary_frame_color, 0.3, 0)
-        overlay = add_rectangles_to_frame_with_id(overlay, gt[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)], (0, 0, 255), ids)
+
+        overlay = add_rectangles_to_frame_with_id(overlay, gt[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)], (0, 0, 255))
         overlay = add_rectangles_to_frame_with_id(overlay, preds[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)], (0, 255, 0), ids)
         put_text_top_left(overlay, f"AP: {aps[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)]:.5f}, Frame: {i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)}. mAP of full video: {map:.5f}")
         cv2.imshow('overlay', overlay)

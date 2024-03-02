@@ -32,6 +32,9 @@ def main():
     save_visualizations(mean_to_viz, std_to_viz)
     
     binary_frames = generate_binary_frames(cap, total_frames, mean, std)
+
+    
+
     preds = predict_bboxes(binary_frames)
     ids_tracking = overlap_tracking(preds)
 
