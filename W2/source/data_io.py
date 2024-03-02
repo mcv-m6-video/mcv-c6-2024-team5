@@ -122,8 +122,9 @@ def save_frames(cap, binary_frames, max_frame, total_frames, gt, preds, aps, map
 def gt_bbox(frame_dict, frame_number):
     bboxes = []
     for car_id, car in frame_dict[str(frame_number)].items():
-        if car['is_parked']:
-            continue
+        # Not skip parked cars in W2
+        # if car['is_parked']:
+        #     continue
         x1, y1, x2, y2 = int(car['xtl']), int(car['ytl']), int(car['xbr']), int(car['ybr'])
         bboxes.append((x1, y1, x2, y2))
     return bboxes
@@ -133,6 +134,14 @@ def gt_bboxes(frame_dict, total_frames):
     for i in range(int(total_frames * gv.Params.FRAMES_PERCENTAGE), total_frames):
         gt.append(gt_bbox(frame_dict, i))
     return gt
+
+def yolo_bboxes(boxes):
+    preds = []
+    for box in boxes:
+        box = box.xyxy[0]
+        x1, y1, x2, y2 = int(box[0]), int(box[1]), int(box[2]), int(box[3])
+        preds.append((x1, y1, x2, y2))
+    return preds
 
 def gt_bboxes_comparison(frame_dict, total_frames, percentage_frames):
     """
