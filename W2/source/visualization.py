@@ -57,17 +57,11 @@ def show_frame_with_pred(cap, binary_frames, total_frames, gt, preds, aps, map):
     
 ## VISUALIZATION FUNCTIONS W2
         
-def add_boxes_to_frame(frame, boxes, gt=False):
-    if gt:
-        color = (0, 255, 0) # Green for the GT
-        for car_id, box in boxes.items():
-            xtl, ytl, xbr, ybr = int(box['xtl']), int(box['ytl']), int(box['xbr']), int(box['ybr'])
-            print('gt box:', xtl, ytl, xbr, ybr)
-            cv2.rectangle(frame, (xtl, ytl), (xbr, ybr), color, 2)
-    else:
-        color = (0, 0, 255) # Red for the predictions
-        for box in boxes:
-            xtl, ytl, xbr, ybr = int(box.xyxy[0][0]), int(box.xyxy[0][1]), int(box.xyxy[0][2]), int(box.xyxy[0][3])
-            print('pred box:', xtl, ytl, xbr, ybr)
-            cv2.rectangle(frame, (xtl, ytl), (xbr, ybr), color, 2)
+def display_frame_with_overlay(frame, gt_boxes, pred_boxes, ap, map, display):
+    frame = add_rectangles_to_frame(frame, gt_boxes, (0, 255, 0)) # Green for the GT
+    frame = add_rectangles_to_frame(frame, pred_boxes, (0, 0, 255)) # Red for the predictions
+    put_text_top_left(frame, f"AP: {ap:.5f}; mAP for the full video: {map:.5f}")
+    if display:
+        cv2.imshow('overlay', frame)
+        cv2.waitKey(1)
     return frame

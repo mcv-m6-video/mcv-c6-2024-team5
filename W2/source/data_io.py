@@ -195,3 +195,14 @@ def save_metrics(aps, map, method=None):
         with open(f"{gv.Params.PATH_RUN}results.json", "w") as file:
             json.dump(results, file)
 
+## W2 DATA IO FUNCTIONS
+            
+def save_gif_from_overlayed_frames(overlayed_frames, resolution_reduction=1):
+    with imageio.get_writer(f"overlayed_frames.gif", mode='I', duration = 0.005) as writer:
+        for frame in overlayed_frames:
+            # Convert to RGB
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            # Resize frame if necessary
+            if resolution_reduction != 1:
+                frame = cv2.resize(frame, (int(frame.shape[1] / resolution_reduction), int(frame.shape[0] / resolution_reduction)))
+            writer.append_data(frame)

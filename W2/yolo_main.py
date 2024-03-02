@@ -1,8 +1,9 @@
 import cv2
 from ultralytics import YOLO
 
-from source.visualization import add_rectangles_to_frame
-from source.data_io import load_frame_dict, gt_bbox, yolo_bboxes
+from source.visualization import display_frame_with_overlay
+from source.data_io import load_frame_dict, gt_bbox, yolo_bboxes, save_gif_from_overlayed_frames, calculate_mAP
+from source.metrics import compute_ap
 
 # Annotations in frame_dict are in the format:
 # ```
@@ -50,6 +51,12 @@ results = yolo_model.predict(
 
 frame_number = 0
 visualize = True
+display = False
+overlayed_frames = []
+aps = []
+gts_boxes = []
+preds_boxes = []
+frames = []
 # Process results generator
 for result in results:
     # boxes = result.boxes  # Boxes object for bounding box outputs
@@ -61,19 +68,33 @@ for result in results:
     
     # Get original frame
     frame = result.orig_img
-
+    frames.append(frame)
     # Get bboxes from the result
     pred_boxes = yolo_bboxes(result.boxes)
+    preds_boxes.append(pred_boxes)
     # Get the GT annotations for the frame
     gt_boxes = gt_bbox(annotations, frame_number)
-    
-    if visualize:
-        # Add the GT and predicted boxes to the frame
-        frame = add_rectangles_to_frame(frame, gt_boxes, (0, 255, 0)) # Green for the GT
-        frame = add_rectangles_to_frame(frame, pred_boxes, (0, 0, 255)) # Red for the predictions
-        # Show the frame
-        cv2.imshow('frame', frame)
-        cv2.waitKey(0)
+    gts_boxes.append(gt_boxes)
+    # Calculate AP for the frame
+    ap = compute_ap(gt_boxes, pred_boxes)
+    aps.append(ap)
 
     frame_number += 1
-    break  # stop iteration
+
+    # Stop the program if Q is pressed
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        print("Quitting...")
+        break
+    # ? Temporal: Break at 10 frames
+    if frame_number > 50:
+        break
+
+# Compute the mAP for the video
+map = calculate_mAP(gts_boxes, preds_boxes, aps)
+print("mAP of the video:", map)
+if visualize:
+    for frame, gt_boxes, pred_boxes, ap in zip(frames, gts_boxes, preds_boxes, aps):
+        frame_overlay = display_frame_with_overlay(frame, gt_boxes, pred_boxes, ap, map, display)
+        overlayed_frames.append(frame_overlay)
+# Build and save a gif with the overlayed frames
+save_gif_from_overlayed_frames(overlayed_frames, 4)
