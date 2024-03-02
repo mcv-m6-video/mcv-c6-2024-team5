@@ -1,0 +1,1 @@
+{"RECOMPUTE_MEAN_STD": true, "FRAMES_PERCENTAGE": 0.25, "ALPHA": 3, "ADAPTIVE_MODELLING": true, "MODELLING_TAG": "adaptive", "RHO": 0.4, "COLOR": true, "COLOR_TAG": "color", "COLOR_SPACE": "rgb", "SHOW_BINARY_FRAMES": true, "STATE_OF_THE_ART": true, "TAG": "", "PATH_RUN": "./output/_state_of_the_art/"}

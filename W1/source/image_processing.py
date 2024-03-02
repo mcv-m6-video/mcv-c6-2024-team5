@@ -137,3 +137,39 @@ def find_connected_components(binary_frame):
         elif area > 250 and area < 1000000 and  y <height/7 and w > h and h/w <3:
             bounding_boxes.append((x, y, x + w, y + h))
     return bounding_boxes
+
+def background_subtraction_method(background_subtractor):
+    if background_subtractor == 'MOG':
+        backSub = cv2.bgsegm.createBackgroundSubtractorMOG()
+    elif background_subtractor == 'MOG2':
+        backSub = cv2.createBackgroundSubtractorMOG2(history=200, detectShadows=True)
+    elif background_subtractor == 'GMG':
+        backSub = cv2.bgsegm.createBackgroundSubtractorGMG(initializationFrames=120, decisionThreshold=0.9)
+    elif background_subtractor == 'KNN':
+        backSub = cv2.createBackgroundSubtractorKNN(dist2Threshold=400.0, detectShadows=True)
+    elif background_subtractor == 'CNT':
+        backSub = cv2.bgsegm.createBackgroundSubtractorCNT(minPixelStability=15, useHistory=True,
+                                                           maxPixelStability=15 * 60, isParallel=True)
+    elif background_subtractor == 'GSOC':
+        backSub = cv2.bgsegm.createBackgroundSubtractorGSOC(mc=5)
+    else:
+        raise ValueError("Invalid background subtraction method")
+    return backSub
+
+def soa_binary_frames(cap, total_frames, method):
+    binary_frames = []
+    cap.set(cv2.CAP_PROP_POS_FRAMES, int(total_frames * gv.Params.FRAMES_PERCENTAGE))
+    backSub = background_subtraction_method(method)
+    for i in range(int(total_frames * gv.Params.FRAMES_PERCENTAGE), total_frames):
+        ret, frame = cap.read()
+        if not ret:
+            break
+        frame = get_relevant_color(frame)
+        binary_frame = backSub.apply(frame)
+
+        threshold_value = 128
+        _, binary_frame = cv2.threshold(binary_frame, threshold_value, 255, cv2.THRESH_BINARY)
+        # binary_frame = post_processing(binary_frame)
+        # _, binary_frame = cv2.threshold(binary_frame, 1, 255, cv2.THRESH_BINARY)
+        binary_frames.append(binary_frame)
+    return binary_frames

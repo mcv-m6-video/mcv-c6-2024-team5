@@ -44,6 +44,20 @@ def save_mean_std(mean, std, start=True):
 
 def save_visualizations(mean_to_viz, std_to_viz, start=True):
     phase_tag = "start" if start else "end"
+    # Change color space to BGR for visualization
+    if gv.Params.COLOR:
+        if gv.Params.COLOR_SPACE == "hsv":
+            mean_to_viz = cv2.cvtColor(mean_to_viz, cv2.COLOR_HSV2BGR)
+            std_to_viz = cv2.cvtColor(std_to_viz, cv2.COLOR_HSV2BGR)
+        elif gv.Params.COLOR_SPACE == "yuv":
+            mean_to_viz = cv2.cvtColor(mean_to_viz, cv2.COLOR_YUV2BGR)
+            std_to_viz = cv2.cvtColor(std_to_viz, cv2.COLOR_YUV2BGR)
+        elif gv.Params.COLOR_SPACE == "lab":
+            mean_to_viz = cv2.cvtColor(mean_to_viz, cv2.COLOR_LAB2BGR)
+            std_to_viz = cv2.cvtColor(std_to_viz, cv2.COLOR_LAB2BGR)
+        elif gv.Params.COLOR_SPACE == "ycrcb":
+            mean_to_viz = cv2.cvtColor(mean_to_viz, cv2.COLOR_YCrCb2BGR)
+            std_to_viz = cv2.cvtColor(std_to_viz, cv2.COLOR_YCrCb2BGR)
     cv2.imwrite(f"{gv.Params.PATH_RUN}mean_{phase_tag}.png", mean_to_viz)
     cv2.imwrite(f"{gv.Params.PATH_RUN}std_{phase_tag}.png", std_to_viz)
 
@@ -163,7 +177,12 @@ def calculate_mAP_comparison(gt_annotations, all_predictions):
 
     return aps, map_value
 
-def save_metrics(aps, map):
+def save_metrics(aps, map, method=None):
     results = {"aps": aps, "mAP of the video": map}
-    with open(f"{gv.Params.PATH_RUN}results.json", "w") as file:
-        json.dump(results, file)
+    if method is not None:
+        with open(f"{gv.Params.PATH_RUN}results_{method}.json", "w") as file:
+            json.dump(results, file)
+    else:
+        with open(f"{gv.Params.PATH_RUN}results.json", "w") as file:
+            json.dump(results, file)
+
