@@ -75,8 +75,21 @@ def generate_binary_frames(cap, total_frames, mean, std):
                 channel_diff = abs(frame[:,:,c] - mean[:,:,c])
                 binary_channel = (channel_diff >= gv.Params.ALPHA * (std[:,:,c] + 2)).astype(np.uint8) * 255
                 binary_frame[:,:,c] = binary_channel
+            
+            if i == gv.Params.FRAME_TO_ANALYZE:
+                # Save each channel as a separate image with it's respective color
+                # First channel is blue, second is green, third is red
+                # Convert each channel to 3 channels with the same value with only one channel with the color
+                for c in range(frame.shape[2]):
+                    channel = np.zeros_like(frame, dtype=np.uint8)
+                    channel[:,:,c] = binary_frame[:,:,c]
+                    cv2.imwrite(f"{gv.Params.PATH_RUN}binary_frame_{i}_channel_{c}.png", channel)
+
             # Combine binary masks from all channels
             binary_frame = np.max(binary_frame, axis=2).astype(np.uint8)
+            if i == gv.Params.FRAME_TO_ANALYZE:
+                # Also the combined binary frame
+                cv2.imwrite(f"{gv.Params.PATH_RUN}binary_frame_{i}.png", binary_frame)
         else:
             #? If condition is true, then set the pixel to 255, so it is white -> Foreground
             binary_frame = (abs(frame - mean) >= gv.Params.ALPHA * (std + 2)).astype(np.uint8) * 255
@@ -97,6 +110,9 @@ def generate_binary_frames(cap, total_frames, mean, std):
                 std = np.where(binary_frame == 0, aux_std, std)
 
         binary_frame = post_processing(binary_frame)
+        if i == gv.Params.FRAME_TO_ANALYZE:
+            # Save also the post-processed binary frame
+            cv2.imwrite(f"{gv.Params.PATH_RUN}binary_frame_{i}_post_processed.png", binary_frame)
         binary_frames.append(binary_frame)
     return binary_frames
 

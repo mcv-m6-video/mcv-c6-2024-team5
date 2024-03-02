@@ -23,11 +23,11 @@ def init():
     PATH_TO_OUTPUT = "./output/"
 
     parser = argparse.ArgumentParser(description='C6 Team 5 - Week 1')
-    parser.add_argument('--recompute-mean-std', action='store_true', default=True, help='Whether the mean and standard deviation should be recomputed')
+    parser.add_argument('--recompute-mean-std', action='store_true', default=False, help='Whether the mean and standard deviation should be recomputed')
     parser.add_argument('--frames-percentage', type=float, default=0.25, help='Percentage of frames to use for the mean and standard deviation computation')
-    parser.add_argument('--alpha', type=float, default=3, help='Alpha value for the binary frames computation')
+    parser.add_argument('--alpha', type=float, default=4.58, help='Alpha value for the binary frames computation')
     parser.add_argument('--adaptive-modelling', action='store_true', default=True, help='Whether to use adaptive modelling')
-    parser.add_argument('--rho', type=float, default=0.4, help='Rho value for the binary frames computation')
+    parser.add_argument('--rho', type=float, default=0.06, help='Rho value for the binary frames computation')
     parser.add_argument('--color', action='store_true', default=True, help='Whether to use color for the binary frames computation')
     parser.add_argument('--color-space', type=str, default="rgb", choices=["rgb", "hsv", "yuv", "lab", "ycrcb"], help="Color space to use for the binary frames computation")
     parser.add_argument('--show-binary-frames', action='store_true', default=True, help='Whether to show the binary frames')
@@ -49,6 +49,7 @@ def init():
         SHOW_BINARY_FRAMES = args.show_binary_frames
         STATE_OF_THE_ART = args.state_of_the_art
         TAG = args.tag
+        FRAME_TO_ANALYZE = 550
 
         if ADAPTIVE_MODELLING:
             if COLOR:

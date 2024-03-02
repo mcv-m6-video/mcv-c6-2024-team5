@@ -47,5 +47,10 @@ def show_frame_with_pred(cap, binary_frames, total_frames, gt, preds, aps, map):
         overlay = add_rectangles_to_frame(overlay, gt[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)], (0, 0, 255))
         overlay = add_rectangles_to_frame(overlay, preds[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)], (0, 255, 0))
         put_text_top_left(overlay, f"AP: {aps[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)]:.5f}, Frame: {i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)}. mAP of full video: {map:.5f}")
+        
+        if i == gv.Params.FRAME_TO_ANALYZE:
+            # Save the overlay image for the selected frame
+            cv2.imwrite(f"{gv.Params.PATH_RUN}overlay_{i}.png", overlay)
+
         cv2.imshow('overlay', overlay)
         cv2.waitKey(0)
