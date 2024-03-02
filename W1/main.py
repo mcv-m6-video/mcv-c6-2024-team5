@@ -1,6 +1,6 @@
 import cv2
 
-from source.data_io import load_video, load_frame_dict, load_mean_std, save_mean_std, save_visualizations, gt_bboxes, calculate_mAP, init_output_folder, save_metrics
+from source.data_io import load_video, load_frame_dict, load_mean_std, save_mean_std, save_visualizations, gt_bboxes, calculate_mAP, init_output_folder, save_metrics, save_gif, save_frames
 from source.image_processing import process_frames, compute_mean_std, truncate_values, generate_binary_frames, predict_bboxes
 from source.visualization import show_binary_frames, show_frame_with_pred
 from source.metrics import compute_video_ap
@@ -37,6 +37,8 @@ def main():
     map = calculate_mAP(gt, preds, aps)
     print("mAP of the video:", map)
     save_metrics(aps, map)
+    #save_gif(cap, binary_frames, 250, total_frames, gt, preds, aps, map)
+    save_frames(cap, binary_frames, 250, total_frames, gt, preds, aps, map)
     if gv.Params.SHOW_BINARY_FRAMES:
         show_frame_with_pred(cap, binary_frames, total_frames, gt, preds, aps, map)
         #show_binary_frames(binary_frames, total_frames, gt, preds, aps, map)

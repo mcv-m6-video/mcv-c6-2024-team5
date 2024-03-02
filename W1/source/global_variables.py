@@ -31,6 +31,7 @@ def init():
     parser.add_argument('--color', action='store_true', default=True, help='Whether to use color for the binary frames computation')
     parser.add_argument('--color-space', type=str, default="rgb", choices=["rgb", "hsv", "yuv", "lab", "ycrcb"], help="Color space to use for the binary frames computation")
     parser.add_argument('--show-binary-frames', action='store_true', default=True, help='Whether to show the binary frames')
+    parser.add_argument('--state-of-the-art', action='store_true', default=True, help="State of the art background subtraction method")
     parser.add_argument('--tag', type=str, default="", help='Tag for the output folder')
     args = parser.parse_args()
     
@@ -46,6 +47,7 @@ def init():
         COLOR_TAG = "color" if COLOR else "grayscale"
         COLOR_SPACE = args.color_space if COLOR else ""
         SHOW_BINARY_FRAMES = args.show_binary_frames
+        STATE_OF_THE_ART = args.state_of_the_art
         TAG = args.tag
         FRAME_TO_ANALYZE = 550
 
@@ -59,5 +61,8 @@ def init():
                 PATH_RUN = f"{PATH_TO_OUTPUT}{TAG}_{MODELLING_TAG}_{COLOR_TAG}_{COLOR_SPACE}_alpha={str(ALPHA)}/"
             else:
                 PATH_RUN = f"{PATH_TO_OUTPUT}{TAG}_{MODELLING_TAG}_{COLOR_TAG}_alpha={str(ALPHA)}/"
+
+        if STATE_OF_THE_ART:
+            PATH_RUN = f"{PATH_TO_OUTPUT}{TAG}_state_of_the_art/"
     
     log_params()

@@ -5,8 +5,9 @@ import matplotlib.pyplot as plt
 import source.global_variables as gv
 from source.data_io import gt_bbox, gt_bboxes_comparison, calculate_mAP_comparison
 from source.visualization import show_binary_frames, add_rectangles_to_frame, put_text_top_left
-from source.metrics import calculate_iou
+from source.metrics import compute_ap
 from source.data_io import load_video, load_frame_dict
+from scripts.graphics import plot_mAP_comparison
 
 # Import and initialize Params
 gv.init()
@@ -132,11 +133,6 @@ def Background_subtraction(background_subtractor, cap, frame_dict, total_frames,
     cap.release()
     cv2.destroyAllWindows()
 
-    # # Create a new VideoCapture to show the frames with predictions
-    # cap = cv2.VideoCapture(VIDEO_FILE)
-    # if all_predictions:
-    #     show_frame_with_pred_comparison(cap, all_predictions, total_frames, gt_annotations, all_predictions, aps, mAP)
-    
     # Return the calculated mAP
     return mAP  
 
@@ -157,20 +153,4 @@ for method in background_subtractors:
     mAP_results.append((method, percentage, mAP))
 
 # Plot the mAP results for comparison
-method_labels = [f"{method} (mAP: {mAP:.3f})" for method, percentage, mAP in mAP_results]
-mAP_values = [mAP for _, _, mAP in mAP_results]
-percentage_str = str(percentage*100)
-
-plt.bar(method_labels, mAP_values)
-plt.xlabel('Background Subtraction Method')
-plt.ylabel('Mean Average Precision (mAP)')
-plt.title(f'Comparison of Mean Average Precision (mAP) for Different Background Subtraction Methods with Frame Percentage = {percentage_str}%')
-plt.xticks(rotation=45, ha='right', fontsize=8)
-plt.ylim(0, 1)  
-plt.tight_layout()
-
-# Save the plot
-plt.savefig('./output/mAP_comparison_methods.png')
-
-# Show the plot
-plt.show()
+plot_mAP_comparison(mAP_results, percentage)

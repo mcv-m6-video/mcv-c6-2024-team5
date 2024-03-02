@@ -2,9 +2,11 @@ import cv2
 import numpy as np
 import json
 import os
+import imageio
 
 import source.global_variables as gv
 from source.metrics import compute_ap
+from source.visualization import add_rectangles_to_frame, put_text_top_left
 
 ## LOADING FUNCTIONS
 
@@ -58,6 +60,64 @@ def save_visualizations(mean_to_viz, std_to_viz, start=True):
             std_to_viz = cv2.cvtColor(std_to_viz, cv2.COLOR_YCrCb2BGR)
     cv2.imwrite(f"{gv.Params.PATH_RUN}mean_{phase_tag}.png", mean_to_viz)
     cv2.imwrite(f"{gv.Params.PATH_RUN}std_{phase_tag}.png", std_to_viz)
+
+def save_gif(cap, binary_frames,max_frame, total_frames, gt, preds, aps, map):
+    with imageio.get_writer(f"{gv.Params.PATH_RUN}GIF2.gif", mode='I', duration = 0.005) as writer:
+        cap.set(cv2.CAP_PROP_POS_FRAMES, int(total_frames * gv.Params.FRAMES_PERCENTAGE))
+        for i in range(int(total_frames * gv.Params.FRAMES_PERCENTAGE), total_frames):
+            ret, frame = cap.read()
+            if not ret:
+                break
+            #frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            #frame = frames[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)]
+            binary_frame = binary_frames[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)]
+
+            # combine binary_frame as an overlay of frame with the binarization in pink color
+            binary_frame_color = np.zeros(frame.shape, dtype=np.uint8)
+            
+            # fill the binary_frame_color with the binary_frame items that were not zeros as pink
+            binary_frame_color[binary_frame != 0] = [255, 0, 255]
+            overlay = cv2.addWeighted(frame, 0.7, binary_frame_color, 0.3, 0)
+            overlay = add_rectangles_to_frame(overlay, gt[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)], (0, 0, 255))
+            overlay = add_rectangles_to_frame(overlay, preds[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)], (0, 255, 0))
+            put_text_top_left(overlay, f"AP: {aps[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)]:.5f}, Frame: {i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)}. mAP of full video: {map:.5f}")
+            
+            #resize overlay to 500x500x3
+            overlay = cv2.resize(overlay, (750, 500))
+
+            writer.append_data(overlay)
+
+            if i - int(total_frames * gv.Params.FRAMES_PERCENTAGE) == max_frame:
+                break
+
+def save_frames(cap, binary_frames, max_frame, total_frames, gt, preds, aps, map):
+    cap.set(cv2.CAP_PROP_POS_FRAMES, int(total_frames * gv.Params.FRAMES_PERCENTAGE))
+    for i in range(int(total_frames * gv.Params.FRAMES_PERCENTAGE), total_frames):
+        ret, frame = cap.read()
+        if not ret:
+            break
+        #frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        #frame = frames[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)]
+        binary_frame = binary_frames[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)]
+
+        # combine binary_frame as an overlay of frame with the binarization in pink color
+        binary_frame_color = np.zeros(frame.shape, dtype=np.uint8)
+        
+        # fill the binary_frame_color with the binary_frame items that were not zeros as pink
+        binary_frame_color[binary_frame != 0] = [255, 0, 255]
+        overlay = cv2.addWeighted(frame, 0.7, binary_frame_color, 0.3, 0)
+        overlay = add_rectangles_to_frame(overlay, gt[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)], (0, 0, 255))
+        overlay = add_rectangles_to_frame(overlay, preds[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)], (0, 255, 0))
+        put_text_top_left(overlay, f"AP: {aps[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)]:.5f}, Frame: {i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)}. mAP of full video: {map:.5f}")
+
+
+        if (i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)) % 15  == 0 or i - int(total_frames * gv.Params.FRAMES_PERCENTAGE) == 0:
+            cv2.imwrite(f"{gv.Params.PATH_RUN}frame_{i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)}.png", overlay)
+
+        if i - int(total_frames * gv.Params.FRAMES_PERCENTAGE) == max_frame:
+            break
+
+
 
 def gt_bbox(frame_dict, frame_number):
     bboxes = []
@@ -117,7 +177,12 @@ def calculate_mAP_comparison(gt_annotations, all_predictions):
 
     return aps, map_value
 
-def save_metrics(aps, map):
+def save_metrics(aps, map, method=None):
     results = {"aps": aps, "mAP of the video": map}
-    with open(f"{gv.Params.PATH_RUN}results.json", "w") as file:
-        json.dump(results, file)
+    if method is not None:
+        with open(f"{gv.Params.PATH_RUN}results_{method}.json", "w") as file:
+            json.dump(results, file)
+    else:
+        with open(f"{gv.Params.PATH_RUN}results.json", "w") as file:
+            json.dump(results, file)
+
