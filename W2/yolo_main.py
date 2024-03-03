@@ -3,7 +3,7 @@ from ultralytics import YOLO
 
 from source.visualization import display_frame_with_overlay
 from source.data_io import load_frame_dict, gt_bbox, yolo_bboxes, save_gif_from_overlayed_frames, calculate_mAP
-from source.metrics import compute_ap
+from source.metrics import compute_ap_confidences
 
 # Annotations in frame_dict are in the format:
 # ```
@@ -53,9 +53,11 @@ frame_number = 0
 visualize = True
 display = False
 overlayed_frames = []
-aps = []
+aps_50 = []
+aps_70 = []
 gts_boxes = []
 preds_boxes = []
+preds_confidences = []
 frames = []
 # Process results generator
 for result in results:
@@ -70,17 +72,19 @@ for result in results:
     frame = result.orig_img
     frames.append(frame)
     # Get bboxes from the result
-    pred_boxes = yolo_bboxes(result.boxes)
+    pred_boxes, pred_confidences = yolo_bboxes(result.boxes)
     preds_boxes.append(pred_boxes)
+    preds_confidences.append(pred_confidences)
     # Get the GT annotations for the frame
     gt_boxes = gt_bbox(annotations, frame_number)
     gts_boxes.append(gt_boxes)
     # Calculate AP for the frame
-    ap = compute_ap(gt_boxes, pred_boxes)
-    aps.append(ap)
+    ap_50 = compute_ap_confidences(gt_boxes, pred_boxes, pred_confidences, 0.5, 0.5)
+    ap_70 = compute_ap_confidences(gt_boxes, pred_boxes, pred_confidences, 0.5, 0.7)
+    aps_50.append(ap_50)
+    aps_70.append(ap_70)
 
     frame_number += 1
-
     # Stop the program if Q is pressed
     if cv2.waitKey(1) & 0xFF == ord('q'):
         print("Quitting...")
@@ -90,11 +94,13 @@ for result in results:
         break
 
 # Compute the mAP for the video
-map = calculate_mAP(gts_boxes, preds_boxes, aps)
-print("mAP of the video:", map)
+map_50 = calculate_mAP(gts_boxes, preds_boxes, aps_50)
+map_70 = calculate_mAP(gts_boxes, preds_boxes, aps_70)
+print("mAP50 of the video:", map_50)
+print("mAP70 of the video:", map_70)
 if visualize:
-    for frame, gt_boxes, pred_boxes, ap in zip(frames, gts_boxes, preds_boxes, aps):
-        frame_overlay = display_frame_with_overlay(frame, gt_boxes, pred_boxes, ap, map, display)
+    for frame, gt_boxes, pred_boxes, pred_confidences, ap_50 in zip(frames, gts_boxes, preds_boxes, preds_confidences, aps_50):
+        frame_overlay = display_frame_with_overlay(frame, gt_boxes, pred_boxes, ap_50, map_50, display)
         overlayed_frames.append(frame_overlay)
 # Build and save a gif with the overlayed frames
 save_gif_from_overlayed_frames(overlayed_frames, 4)

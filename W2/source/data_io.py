@@ -136,12 +136,15 @@ def gt_bboxes(frame_dict, total_frames):
     return gt
 
 def yolo_bboxes(boxes):
-    preds = []
+    pred_boxes = []
+    pred_confidences = []
     for box in boxes:
+        confidence = float(box.conf[0])
         box = box.xyxy[0]
         x1, y1, x2, y2 = int(box[0]), int(box[1]), int(box[2]), int(box[3])
-        preds.append((x1, y1, x2, y2))
-    return preds
+        pred_confidences.append(confidence)
+        pred_boxes.append((x1, y1, x2, y2))
+    return pred_boxes, pred_confidences
 
 def gt_bboxes_comparison(frame_dict, total_frames, percentage_frames):
     """
