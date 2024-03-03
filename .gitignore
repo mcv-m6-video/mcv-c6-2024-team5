@@ -1,6 +1,9 @@
 W1/data
 W2/data
 
+# .pt files
+*.pt
+
 # Python .gitignore
 __pycache__/
 *.py[cod]
