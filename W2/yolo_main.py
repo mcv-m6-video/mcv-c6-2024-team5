@@ -108,7 +108,7 @@ frame_number = 0
 if visualize:
     for frame, gt_boxes, pred_boxes, pred_confidences, ap_50 in zip(frames, gts_boxes, preds_boxes, preds_confidences, aps_50):
         if range_to_visualize[0] <= frame_number <= range_to_visualize[1]:
-            frame_overlay = display_frame_with_overlay(frame, gt_boxes, pred_boxes, ap_50, map_50, display)
+            frame_overlay = display_frame_with_overlay(frame, gt_boxes, pred_boxes, pred_confidences, ap_50, map_50, display)
             overlayed_frames.append(frame_overlay)
         frame_number += 1
     # Build and save a gif with the overlayed frames
