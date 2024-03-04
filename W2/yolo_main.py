@@ -53,7 +53,8 @@ results = yolo_model.predict(
 )  # generator of Results objects
 
 frame_number = 0
-visualize = False
+visualize = True
+range_to_visualize = (500, 700)
 display = False
 overlayed_frames = []
 aps_50 = []
@@ -103,12 +104,15 @@ print("mAP70 of the video:", map_70)
 # End time
 end_time = time.time()
 
+frame_number = 0
 if visualize:
     for frame, gt_boxes, pred_boxes, pred_confidences, ap_50 in zip(frames, gts_boxes, preds_boxes, preds_confidences, aps_50):
-        frame_overlay = display_frame_with_overlay(frame, gt_boxes, pred_boxes, ap_50, map_50, display)
-        overlayed_frames.append(frame_overlay)
+        if range_to_visualize[0] <= frame_number <= range_to_visualize[1]:
+            frame_overlay = display_frame_with_overlay(frame, gt_boxes, pred_boxes, ap_50, map_50, display)
+            overlayed_frames.append(frame_overlay)
+        frame_number += 1
     # Build and save a gif with the overlayed frames
-    save_gif_from_overlayed_frames(overlayed_frames, 4)
+    save_gif_from_overlayed_frames(overlayed_frames, model_name, 2)
 
 # Save run in a json file
 run = {
