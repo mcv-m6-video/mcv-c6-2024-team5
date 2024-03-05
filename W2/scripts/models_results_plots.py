@@ -3,8 +3,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # List of model identifiers
-models_identifiers = ['n', 's', 'm', 'l', 'x']
-files = [f"../output/results_yolov8{n}.pt.json" for n in models_identifiers]
+# models_identifiers = ['n', 's', 'm', 'l', 'x']
+# files = [f"../output/results_yolov8{n}.pt.json" for n in models_identifiers]
+models_identifiers = ['yolov8m', 'best_all']
+files = [f"../output/results_{n}.pt.json" for n in models_identifiers]
 
 # Initialize lists to hold data
 models = []
@@ -27,7 +29,7 @@ for file in files:
         aps_70.append(data['results']['aps_70'])
 
 # Create a model_pretty list for plotting
-model_pretty = ['Nano', 'Small', 'Medium', 'Large', 'X-Large']
+model_pretty = ['Medium', 'Trained medium']
 for i, model in enumerate(models):
     models[i] = model_pretty[i] + ' YOLOv8'
 
@@ -75,7 +77,7 @@ ax2.set_ylim(0, 1.1 * max(total_times))
 # Adjust subplot params for better fit and to prevent clipping of tick-labels
 plt.subplots_adjust(bottom=0.2, right=0.8)
 # Save the plot
-plt.savefig('../output/model_performance.png', bbox_inches='tight')
+plt.savefig('../output/model_performance_improvement.png', bbox_inches='tight')
 
 # Define shades of red for different models
 reds = plt.cm.Reds(np.linspace(0.5, 1, len(models)))
@@ -96,7 +98,7 @@ plt.legend(loc='upper left', bbox_to_anchor=(1, 1), title='Model')
 plt.grid(True, linestyle='--', which='major', color='grey', alpha=0.6)
 plt.tight_layout(rect=[0, 0, 0.8, 1])  # Adjust the right margin to fit the legend
 # Save the plot
-plt.savefig('../output/ap50_evolution.png', bbox_inches='tight')
+plt.savefig('../output/ap50_evolution_improvement.png', bbox_inches='tight')
 
 # Plot for AP70 evolution
 plt.figure(figsize=(12, 6))
@@ -109,6 +111,6 @@ plt.legend(loc='upper left', bbox_to_anchor=(1, 1), title='Model')
 plt.grid(True, linestyle='--', which='major', color='grey', alpha=0.6)
 plt.tight_layout(rect=[0, 0, 0.8, 1])  # Adjust the right margin to fit the legend
 # Save the plot
-plt.savefig('../output/ap70_evolution.png', bbox_inches='tight')
+plt.savefig('../output/ap70_evolution_improvement.png', bbox_inches='tight')
 
 plt.show()

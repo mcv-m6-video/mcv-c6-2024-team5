@@ -34,7 +34,7 @@ models_list = [
     "yolov8x.pt",
 ]
 
-model_name = "yolov8x.pt"
+model_name = "./best_all.pt"
 # Load the YOLO model
 yolo_model = YOLO(model_name)
 
@@ -49,7 +49,7 @@ results = yolo_model.predict(
     source, 
     stream = True,
     device = 'cuda:0',  # GPU inference
-    classes = [2]  # Only cars
+    # classes = [2]  # Only cars, for pretrained models in COCO
 )  # generator of Results objects
 
 frame_number = 0
@@ -104,6 +104,9 @@ print("mAP70 of the video:", map_70)
 # End time
 end_time = time.time()
 
+# if model_name is a path, extract the model name from the path
+if "/" in model_name:
+    model_name = model_name.split("/")[-1]
 frame_number = 0
 if visualize:
     for frame, gt_boxes, pred_boxes, pred_confidences, ap_50 in zip(frames, gts_boxes, preds_boxes, preds_confidences, aps_50):
