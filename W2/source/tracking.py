@@ -3,6 +3,7 @@ from source.metrics import calculate_iou
 import cv2
 import source.global_variables as gv
 from source.visualization import put_text_top_left
+from sort.sort import Sort
 
 def overlap_tracking(preds):
     # perform tracking of the frames by checking the overlap of the bounding boxes present in preds between frame n and frame n-1. If the overlap is greater than 0.5, the bounding boxes are considered to be the same object.
@@ -52,6 +53,7 @@ def add_rectangles_to_frame_with_id(frame, boxes, color, ids=None):
             cv2.putText(frame, str(id), (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
     return frame
 
+
 def show_tracking(cap, binary_frames,ids_tracking, total_frames, gt, preds, aps, map):
     cap.set(cv2.CAP_PROP_POS_FRAMES, int(total_frames * gv.Params.FRAMES_PERCENTAGE))
     for i in range(int(total_frames * gv.Params.FRAMES_PERCENTAGE), total_frames):
@@ -76,4 +78,66 @@ def show_tracking(cap, binary_frames,ids_tracking, total_frames, gt, preds, aps,
         put_text_top_left(overlay, f"AP: {aps[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)]:.5f}, Frame: {i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)}. mAP of full video: {map:.5f}")
         cv2.imshow('overlay', overlay)
         cv2.waitKey(0)
-    
+
+
+def tracking_kalman(cap, binary_frames, preds, total_frames, frame_dict):
+    # Track objects using Kalman filter and display with binary frames
+
+    tracker = Sort()  # Create Sort tracker
+    num_trackers = 0  # Initialize tracker count
+    trackers = []  # Initialize trackers
+
+    for i in range(int(total_frames * gv.Params.FRAMES_PERCENTAGE), min(total_frames, len(preds))):  
+        # Update trackers if there are predictions
+        if len(preds[i]) > 0:
+            trackers = tracker.update(np.array(preds[i]))  
+            num_trackers += len(trackers)  
+
+        print("Processing frame init:", i)  
+
+        # Check if frame number exists in frame_dict
+        if i in frame_dict:
+            frame_info = frame_dict[i]
+            frame = frame_info['frame']
+            boxes_gt = frame_info['bbox']
+        else:
+            continue
+
+        # Draw ground truth bounding boxes (Red Boxes)
+        for box in boxes_gt:
+            cv2.rectangle(frame, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])), (0, 0, 255), 2)
+
+        # Display the tracked boxes (Blue Boxes)
+        for d in trackers:
+            d = d.astype(np.int32)
+            cv2.rectangle(frame, (d[0], d[1]), (d[2], d[3]), (255, 0, 0), 2)  
+            cv2.putText(frame, str(d[4]), (d[0], d[1] - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)  
+
+        # Combine binary_frame as an overlay of frame with the binarization in pink color
+        binary_frame_color = np.zeros(frame.shape, dtype=np.uint8)
+        binary_frame_color[binary_frames[i] != 0] = [255, 0, 255]
+        overlay = cv2.addWeighted(frame, 0.7, binary_frame_color, 0.3, 0)
+
+        # Add rectangles to overlay with IDs
+        ids = []  
+        for pred in preds[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)]:
+            ids.append(int(pred[-1]))  
+        overlay_with_ids = add_rectangles_to_frame_with_id(overlay, preds[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)], (0, 255, 0), ids)
+
+        # Add text to overlay
+        ap = 0.0 if i - int(total_frames * gv.Params.FRAMES_PERCENTAGE) >= len(aps) else aps[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)]
+        put_text_top_left(overlay_with_ids, f"AP: {ap:.5f}, Frame: {i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)}. mAP of full video: {map:.5f}")
+
+        # Display the overlay
+        cv2.imshow('Tracking with a Kalman filter', overlay_with_ids)
+        key = cv2.waitKey(0)  
+
+        print("Processing frame end:", i)  
+
+    print("Finished processing all frames")
+
+    return trackers, num_trackers
+
+
+
+
