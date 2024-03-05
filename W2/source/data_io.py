@@ -200,8 +200,8 @@ def save_metrics(aps, map, method=None):
 
 ## W2 DATA IO FUNCTIONS
             
-def save_gif_from_overlayed_frames(overlayed_frames, resolution_reduction=1):
-    with imageio.get_writer(f"overlayed_frames.gif", mode='I', duration = 0.005) as writer:
+def save_gif_from_overlayed_frames(overlayed_frames, model_name, resolution_reduction=1):
+    with imageio.get_writer(f"overlayed_frames_{model_name}.gif", mode='I', duration = 0.005) as writer:
         for frame in overlayed_frames:
             # Convert to RGB
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
