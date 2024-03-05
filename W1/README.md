@@ -36,14 +36,14 @@ To compute the pipeline to compute the background modelling just execute the fol
 python main.py [--recompute-mean-std] [--frames-percentage FRAMES_PERCENTAGE] [--alpha ALPHA] [--adaptive-modelling] [--rho RHO] [--color] [--color-space {rgb,hsv,yuv,lab,ycrcb}] [--show-binary-frames] [--state-of-the-art] [--tag TAG]
 ```
 
-With the following options:
-  --recompute-mean-std  Whether the mean and standard deviation should be recomputed
-  --frames-percentage   Percentage of frames to use for the mean and standard deviation computation
-  --alpha ALPHA         Alpha value for the binary frames computation
-  --adaptive-modelling  Whether to use adaptive modelling
-  --rho RHO             Rho value for the binary frames computation
-  --color               Whether to use color for the binary frames computation
-  --color-space         Color space to use for the binary frames computation  |  Options:{rgb,hsv,yuv,lab,ycrcb}
-  --show-binary-frames  Whether to show the binary frames
-  --state-of-the-art    State of the art background subtraction method
+With the following options:\
+  --recompute-mean-std  Whether the mean and standard deviation should be recomputed\
+  --frames-percentage   Percentage of frames to use for the mean and standard deviation computation\
+  --alpha ALPHA         Alpha value for the binary frames computation\
+  --adaptive-modelling  Whether to use adaptive modelling\
+  --rho RHO             Rho value for the binary frames computation\
+  --color               Whether to use color for the binary frames computation\
+  --color-space         Color space to use for the binary frames computation  |  Options:{rgb,hsv,yuv,lab,ycrcb}\
+  --show-binary-frames  Whether to show the binary frames\
+  --state-of-the-art    State of the art background subtraction method\
   --tag TAG             Tag for the output folder
