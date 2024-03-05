@@ -49,7 +49,7 @@ def init():
     parser.add_argument('--show-binary-frames', action='store_true', default=True, help='Whether to show the binary frames')
     parser.add_argument('--state-of-the-art', action='store_true', default=True, help="State of the art background subtraction method")
     parser.add_argument('--tag', type=str, default="", help='Tag for the output folder')
-    parser.add_argument('--tracking-method', type=str, default="overlap", choices=["overlap", "kalman"], help="Choose the tracking method")
+    parser.add_argument('--tracking-method', type=str, default="overlap", choices=["overlap", "kalman", "kalman_sort"], help="Choose the tracking method")
     args = parser.parse_args()
     
     # Update Params values
