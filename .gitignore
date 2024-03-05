@@ -4,6 +4,8 @@ W2/yolo
 
 # .pt files
 *.pt
+# .gif files
+*.gif
 
 # Python .gitignore
 __pycache__/
