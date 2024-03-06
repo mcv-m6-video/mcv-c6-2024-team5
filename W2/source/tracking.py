@@ -14,6 +14,7 @@ def overlap_tracking(preds):
     # Iterate over the preds
     for i, pred in enumerate(preds):
         pred_ids = []
+        pred_ids_used = []
         if i == 0:
             for j, box in enumerate(pred):
                 pred_ids.append(ids)
@@ -28,23 +29,13 @@ def overlap_tracking(preds):
                 else:
                     max_iou = max(ious)
                     max_iou_idx = ious.index(max_iou)
-                    if max_iou >= 0.6:
+                    if max_iou >= 0.25 and prev_ids[max_iou_idx] not in pred_ids_used:
                         pred_ids.append(prev_ids[max_iou_idx])
+                        pred_ids_used.append(prev_ids[max_iou_idx])
                     else:
                         pred_ids.append(ids)
                         ids += 1
-        # Check if there are repeated ids
-        if len(pred_ids) != len(set(pred_ids)):
-            # Get repeated ids
-            repeated_ids = [id for id in pred_ids if pred_ids.count(id) > 1]
-            for repeated_id in repeated_ids:
-                found = False
-                for id in pred_ids:
-                    if id == repeated_id and not found:
-                        found = True
-                    elif id == repeated_id and found:
-                        pred_ids[pred_ids.index(id)] = ids
-                        ids += 1
+
         changed_preds = []
         for pred, pred_id in zip(pred, pred_ids):
             changed_preds.append([*pred, pred_id])

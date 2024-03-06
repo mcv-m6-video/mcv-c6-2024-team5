@@ -79,7 +79,8 @@ def save_gif(cap,max_frame, total_frames, gt, preds, aps, map):
         frames.append(overlay)
         if i - int(total_frames * gv.Params.FRAMES_PERCENTAGE) == max_frame:
             break
-    imageio.mimsave(f"{gv.Params.PATH_RUN}/GIF2.gif", frames, duration=20, loop=1)
+    # Make it loop forever
+    imageio.mimsave(f"{gv.Params.PATH_RUN}/GIF2.gif", frames, duration=20, loop=0)
 
 def save_frames(cap, binary_frames, max_frame, total_frames, gt, preds, aps, map):
     cap.set(cv2.CAP_PROP_POS_FRAMES, int(total_frames * gv.Params.FRAMES_PERCENTAGE))
