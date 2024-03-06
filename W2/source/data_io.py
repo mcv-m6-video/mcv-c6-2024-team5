@@ -3,6 +3,7 @@ import numpy as np
 import json
 import os
 import imageio
+import pickle
 
 import source.global_variables as gv
 from source.metrics import compute_ap
@@ -199,3 +200,14 @@ def save_gif_from_overlayed_frames(overlayed_frames, model_name, resolution_redu
             if resolution_reduction != 1:
                 frame = cv2.resize(frame, (int(frame.shape[1] / resolution_reduction), int(frame.shape[0] / resolution_reduction)))
             writer.append_data(frame)
+
+def read_bounding_boxes_from_pkl(file_path):
+    with open(file_path, 'rb') as f:
+        data = pickle.load(f)
+        preds = []
+        for bounding_boxes_list in data:
+            frame_preds = []
+            for box in bounding_boxes_list:
+                frame_preds.append((*box, 1))
+            preds.append(frame_preds)
+        return preds

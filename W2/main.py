@@ -4,6 +4,7 @@ from source.metrics import compute_video_ap
 from source.tracking import overlap_tracking, tracking_kalman_sort
 import source.global_variables as gv
 from source.inference import predict
+from source.visualization import show_tracking
 
 
 def main():
@@ -21,13 +22,13 @@ def main():
 
     # Call the appropriate tracking function
     if gv.Params.TRACKING_METHOD == 'overlap':
-        ids_tracking = overlap_tracking(preds)
-        # show_tracking(cap, ids_tracking, total_frames, gt, new_preds, aps, map)
+        preds_with_ids = overlap_tracking(preds)
+        show_tracking(cap, preds_with_ids, total_frames, gt, aps, map)
     elif gv.Params.TRACKING_METHOD == 'kalman_sort':
-        new_preds = tracking_kalman_sort(preds)
-        # show_tracking_kalman(cap, new_preds, total_frames, gt, aps, map)
+        preds_with_ids = tracking_kalman_sort(preds)
+        show_tracking(cap, preds_with_ids, total_frames, gt, aps, map)
 
-    save_gif(cap, 250, total_frames, gt, new_preds, aps, map)
+    # save_gif(cap, 250, total_frames, gt, new_preds, aps, map)
 
 
 if __name__ == "__main__":

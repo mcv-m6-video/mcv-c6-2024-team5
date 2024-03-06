@@ -1,12 +1,6 @@
 import numpy as np
 from source.metrics import calculate_iou
-import cv2
-import source.global_variables as gv
-from source.visualization import put_text_top_left, add_rectangles_to_frame_with_id
 from sort.sort import Sort
-from filterpy.kalman import KalmanFilter
-import torch
-import pickle
 
 
 def overlap_tracking(preds):
@@ -51,63 +45,15 @@ def overlap_tracking(preds):
         #             elif id == repeated_id and found:
         #                 pred_ids[pred_ids.index(id)] = ids
         #                 ids += 1
-
+        changed_preds = []
         for pred, pred_id in zip(pred, pred_ids):
-            new_preds.append([*pred, pred_id])
+            changed_preds.append([*pred, pred_id])
         prev_ids = np.copy(pred_ids)
+        new_preds.append(changed_preds)
     return new_preds
 
 
-def show_tracking(cap, ids_tracking, total_frames, gt, preds, aps, map):
-    for i in range(total_frames):
-        ret, frame = cap.read()
-        if not ret:
-            break
-        ids = ids_tracking[i]
-        # combine binary_frame as an overlay of frame with the binarization in pink color
-        overlay = add_rectangles_to_frame_with_id(frame, gt[i], (0, 0, 255))
-        overlay = add_rectangles_to_frame_with_id(overlay, preds[i], (0, 255, 0), ids)
-        put_text_top_left(overlay, f"AP: {aps[i]:.5f}, Frame: {i}. mAP of full video: {map:.5f}")
-        cv2.imshow('overlay', overlay)
-        cv2.waitKey(1)
 
-
-def show_tracking_kalman(cap, binary_frames, trackers, ids_list, total_frames, gt, preds, aps, map):
-    cap.set(cv2.CAP_PROP_POS_FRAMES, int(total_frames * gv.Params.FRAMES_PERCENTAGE))
-    for i in range(int(total_frames * gv.Params.FRAMES_PERCENTAGE), total_frames):
-        ret, frame = cap.read()
-        if not ret:
-            break
-
-        ids = ids_list[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)]
-        
-        binary_frame = binary_frames[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)]
-
-        # combine binary_frame as an overlay of frame with the binarization in pink color
-        binary_frame_color = np.zeros(frame.shape, dtype=np.uint8)
-        
-        # fill the binary_frame_color with the binary_frame items that were not zeros as pink
-        binary_frame_color[binary_frame != 0] = [255, 0, 255]
-        overlay = cv2.addWeighted(frame, 0.7, binary_frame_color, 0.3, 0)
-
-        overlay = add_rectangles_to_frame_with_id(overlay, gt[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)], (0, 0, 255))
-        overlay = add_rectangles_to_frame_with_id(overlay, preds[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)], (0, 255, 0), ids)
-        overlay = add_rectangles_to_frame_with_id(overlay, trackers[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)], (255, 0, 0), ids)
-        put_text_top_left(overlay, f"AP: {aps[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)]:.5f}, Frame: {i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)}. mAP of full video: {map:.5f}")
-        cv2.imshow('overlay', overlay)
-        cv2.waitKey(0)
-
-
-def read_bounding_boxes_from_pkl(file_path):
-    with open(file_path, 'rb') as f:
-        data = pickle.load(f)
-        preds = []
-        for bounding_boxes_list in data:
-            frame_preds = []
-            for box in bounding_boxes_list:
-                frame_preds.append((*box, 1))  
-            preds.append(frame_preds)
-        return preds
 
 
 def tracking_kalman_sort(preds):
@@ -119,6 +65,11 @@ def tracking_kalman_sort(preds):
         pred_with_ids = tracker.update(np_pred)
         # Transform them to list of lists
         pred_with_ids = pred_with_ids.astype(int).tolist()
+        # Insert the confidence back in the 5th position of the list (index 4)
+        for pred_with_id, p in zip(pred_with_ids, pred):
+            aux = pred_with_id[4]
+            pred_with_id[4] = p[4]
+            pred_with_id.append(aux)
         new_preds.append(pred_with_ids)
     return new_preds
 

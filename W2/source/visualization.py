@@ -2,16 +2,16 @@ import cv2
 import numpy as np
 import source.global_variables as gv
 
-## VISUALIZATION FUNCTIONS
 
+## VISUALIZATION FUNCTIONS
 def add_rectangles_to_frame_with_id(frame, boxes, color, ids=None):
     if ids is None:
         if len(boxes[0]) == 4:
             for x1, y1, x2, y2 in boxes:
                 cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
-        elif len(boxes[0]) == 5:
+        elif len(boxes[0]) == 6:
             for box in boxes:
-                x1, y1, x2, y2, id = box
+                x1, y1, x2, y2, _, id = box
                 cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
                 cv2.putText(frame, str(id), (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
     else:
@@ -21,6 +21,7 @@ def add_rectangles_to_frame_with_id(frame, boxes, color, ids=None):
             id = ids[i]
             cv2.putText(frame, str(id), (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
     return frame
+
 
 def show_binary_frames(binary_frames, total_frames, gt, preds, aps, map):
     for i in range(int(total_frames * gv.Params.FRAMES_PERCENTAGE), total_frames):
@@ -33,10 +34,12 @@ def show_binary_frames(binary_frames, total_frames, gt, preds, aps, map):
         cv2.imshow('binary_frame', binary_frame)
         cv2.waitKey(0)
 
+
 def add_rectangles_to_frame(frame, boxes, color):
     for x1, y1, x2, y2 in boxes:
         cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
     return frame
+
 
 def add_rectangles_to_frame_confidence(frame, boxes, pred_condifences, color):
     for box, confidence in zip(boxes, pred_condifences):
@@ -46,6 +49,7 @@ def add_rectangles_to_frame_confidence(frame, boxes, pred_condifences, color):
 
     return frame
 
+
 def put_text_top_left(frame, text):
     font = cv2.FONT_HERSHEY_SIMPLEX
     bottomLeftCornerOfText = (10, 30)
@@ -53,6 +57,7 @@ def put_text_top_left(frame, text):
     fontColor = (255, 255, 255)
     lineType = 2
     cv2.putText(frame, text, bottomLeftCornerOfText, font, fontScale, fontColor, lineType)
+
 
 def put_text_boundary_box(frame, text, x1, y1):
     font = cv2.FONT_HERSHEY_SIMPLEX
@@ -65,6 +70,7 @@ def put_text_boundary_box(frame, text, x1, y1):
     cv2.rectangle(frame, (x1, y1 - textSize[1]), (x1 + textSize[0], y1), background_color, -1)
     cv2.putText(frame, text, bottomLeftCornerOfText, font, fontScale, fontColor, lineType)
     return frame
+
 
 def show_frame_with_pred(cap, binary_frames, total_frames, gt, preds, aps, map):
     cap.set(cv2.CAP_PROP_POS_FRAMES, int(total_frames * gv.Params.FRAMES_PERCENTAGE))
@@ -94,7 +100,8 @@ def show_frame_with_pred(cap, binary_frames, total_frames, gt, preds, aps, map):
         cv2.waitKey(0)
     
 ## VISUALIZATION FUNCTIONS W2
-        
+
+
 def display_frame_with_overlay(frame, gt_boxes, pred_boxes, pred_confidences, ap, map, display):
     frame = add_rectangles_to_frame(frame, gt_boxes, (0, 255, 0)) # Green for the GT
     frame = add_rectangles_to_frame_confidence(frame, pred_boxes, pred_confidences, (0, 0, 255)) # Red for the predictions
@@ -103,3 +110,16 @@ def display_frame_with_overlay(frame, gt_boxes, pred_boxes, pred_confidences, ap
         cv2.imshow('overlay', frame)
         cv2.waitKey(1)
     return frame
+
+
+def show_tracking(cap, preds, total_frames, gt, aps, map):
+    for i in range(total_frames):
+        ret, frame = cap.read()
+        if not ret:
+            break
+        # combine binary_frame as an overlay of frame with the binarization in pink color
+        overlay = add_rectangles_to_frame_with_id(frame, gt[i], (0, 0, 255))
+        overlay = add_rectangles_to_frame_with_id(overlay, preds[i], (0, 255, 0))
+        put_text_top_left(overlay, f"AP: {aps[i]:.5f}, Frame: {i}. mAP of full video: {map:.5f}")
+        cv2.imshow('overlay', overlay)
+        cv2.waitKey(1)
