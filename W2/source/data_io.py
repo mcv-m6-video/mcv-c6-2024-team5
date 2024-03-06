@@ -190,7 +190,8 @@ def save_metrics(aps, map, method=None):
             json.dump(results, file)
 
 ## W2 DATA IO FUNCTIONS
-            
+
+
 def save_gif_from_overlayed_frames(overlayed_frames, model_name, resolution_reduction=1):
     with imageio.get_writer(f"overlayed_frames_{model_name}.gif", mode='I', duration = 0.005) as writer:
         for frame in overlayed_frames:
@@ -200,6 +201,7 @@ def save_gif_from_overlayed_frames(overlayed_frames, model_name, resolution_redu
             if resolution_reduction != 1:
                 frame = cv2.resize(frame, (int(frame.shape[1] / resolution_reduction), int(frame.shape[0] / resolution_reduction)))
             writer.append_data(frame)
+
 
 def read_bounding_boxes_from_pkl(file_path):
     with open(file_path, 'rb') as f:
@@ -211,3 +213,13 @@ def read_bounding_boxes_from_pkl(file_path):
                 frame_preds.append((*box, 1))
             preds.append(frame_preds)
         return preds
+
+
+def save_for_track_eval(preds_with_ids):
+    with open(f"{gv.Params.PATH_RUN}track_eval.txt", "w") as file:
+        for i, preds in enumerate(preds_with_ids):
+            # Order the predictions by object id
+            preds = sorted(preds, key=lambda x: x[5])
+            for box in preds:
+                # Save in format: frame_id object_id bb_left bb_top bb_width bb_height conf -1 -1 -1
+                file.write(f"{i + 1} {box[5]} {box[0]} {box[1]} {box[2] - box[0]} {box[3] - box[1]} {box[4]} -1 -1 -1\n")

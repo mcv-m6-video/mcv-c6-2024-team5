@@ -34,26 +34,23 @@ def overlap_tracking(preds):
                         pred_ids.append(ids)
                         ids += 1
         # Check if there are repeated ids
-        # if len(pred_ids) != len(set(pred_ids)):
-        #     # Get repeated ids
-        #     repeated_ids = [id for id in pred_ids if pred_ids.count(id) > 1]
-        #     for repeated_id in repeated_ids:
-        #         found = False
-        #         for id in pred_ids:
-        #             if id == repeated_id and not found:
-        #                 found = True
-        #             elif id == repeated_id and found:
-        #                 pred_ids[pred_ids.index(id)] = ids
-        #                 ids += 1
+        if len(pred_ids) != len(set(pred_ids)):
+            # Get repeated ids
+            repeated_ids = [id for id in pred_ids if pred_ids.count(id) > 1]
+            for repeated_id in repeated_ids:
+                found = False
+                for id in pred_ids:
+                    if id == repeated_id and not found:
+                        found = True
+                    elif id == repeated_id and found:
+                        pred_ids[pred_ids.index(id)] = ids
+                        ids += 1
         changed_preds = []
         for pred, pred_id in zip(pred, pred_ids):
             changed_preds.append([*pred, pred_id])
         prev_ids = np.copy(pred_ids)
         new_preds.append(changed_preds)
     return new_preds
-
-
-
 
 
 def tracking_kalman_sort(preds):
@@ -72,4 +69,3 @@ def tracking_kalman_sort(preds):
             pred_with_id.append(aux)
         new_preds.append(pred_with_ids)
     return new_preds
-

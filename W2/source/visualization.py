@@ -112,8 +112,9 @@ def display_frame_with_overlay(frame, gt_boxes, pred_boxes, pred_confidences, ap
     return frame
 
 
-def show_tracking(cap, preds, total_frames, gt, aps, map):
-    for i in range(total_frames):
+def show_tracking(cap, total_frames, gt, preds, aps, map):
+    cap.set(cv2.CAP_PROP_POS_FRAMES, int(total_frames * gv.Params.FRAMES_PERCENTAGE))
+    for i in range(int(total_frames * gv.Params.FRAMES_PERCENTAGE), total_frames):
         ret, frame = cap.read()
         if not ret:
             break
