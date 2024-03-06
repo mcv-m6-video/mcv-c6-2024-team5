@@ -4,6 +4,24 @@ import source.global_variables as gv
 
 ## VISUALIZATION FUNCTIONS
 
+def add_rectangles_to_frame_with_id(frame, boxes, color, ids=None):
+    if ids is None:
+        if len(boxes[0]) == 4:
+            for x1, y1, x2, y2 in boxes:
+                cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+        elif len(boxes[0]) == 5:
+            for box in boxes:
+                x1, y1, x2, y2, id = box
+                cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+                cv2.putText(frame, str(id), (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+    else:
+        for i, box in enumerate(boxes):
+            x1, y1, x2, y2 = box
+            cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+            id = ids[i]
+            cv2.putText(frame, str(id), (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+    return frame
+
 def show_binary_frames(binary_frames, total_frames, gt, preds, aps, map):
     for i in range(int(total_frames * gv.Params.FRAMES_PERCENTAGE), total_frames):
         binary_frame = binary_frames[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)]

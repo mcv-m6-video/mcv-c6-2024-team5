@@ -70,6 +70,7 @@ def compute_ap(gt_boxes, pred_boxes):
     ap = np.mean(precision_interp)
     return ap
 
+
 def compute_ap_confidences(gt_boxes, pred_boxes, pred_confidences, confidence_threshold=0.5, iou_threshold=0.5):
     """
     Compute the average precision (AP) of a model

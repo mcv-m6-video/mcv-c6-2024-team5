@@ -6,7 +6,7 @@ import imageio
 
 import source.global_variables as gv
 from source.metrics import compute_ap
-from source.visualization import add_rectangles_to_frame, put_text_top_left
+from source.visualization import add_rectangles_to_frame, put_text_top_left, add_rectangles_to_frame_with_id
 
 ## LOADING FUNCTIONS
 
@@ -61,34 +61,24 @@ def save_visualizations(mean_to_viz, std_to_viz, start=True):
     cv2.imwrite(f"{gv.Params.PATH_RUN}mean_{phase_tag}.png", mean_to_viz)
     cv2.imwrite(f"{gv.Params.PATH_RUN}std_{phase_tag}.png", std_to_viz)
 
-def save_gif(cap, binary_frames,max_frame, total_frames, gt, preds, aps, map):
-    with imageio.get_writer(f"{gv.Params.PATH_RUN}GIF2.gif", mode='I', duration = 0.005) as writer:
-        cap.set(cv2.CAP_PROP_POS_FRAMES, int(total_frames * gv.Params.FRAMES_PERCENTAGE))
-        for i in range(int(total_frames * gv.Params.FRAMES_PERCENTAGE), total_frames):
-            ret, frame = cap.read()
-            if not ret:
-                break
-            #frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            #frame = frames[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)]
-            binary_frame = binary_frames[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)]
+def save_gif(cap,max_frame, total_frames, gt, preds, aps, map):
+    frames = []
+    cap.set(cv2.CAP_PROP_POS_FRAMES, int(total_frames * gv.Params.FRAMES_PERCENTAGE))
+    for i in range(int(total_frames * gv.Params.FRAMES_PERCENTAGE), total_frames):
+        ret, frame = cap.read()
+        if not ret:
+            break
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        overlay = add_rectangles_to_frame_with_id(frame, gt[i], (0, 0, 255))
+        overlay = add_rectangles_to_frame_with_id(overlay, preds[i], (0, 255, 0))
+        put_text_top_left(overlay, f"AP: {aps[i]:.5f}, Frame: {i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)}. mAP of full video: {map:.5f}")
 
-            # combine binary_frame as an overlay of frame with the binarization in pink color
-            binary_frame_color = np.zeros(frame.shape, dtype=np.uint8)
-            
-            # fill the binary_frame_color with the binary_frame items that were not zeros as pink
-            binary_frame_color[binary_frame != 0] = [255, 0, 255]
-            overlay = cv2.addWeighted(frame, 0.7, binary_frame_color, 0.3, 0)
-            overlay = add_rectangles_to_frame(overlay, gt[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)], (0, 0, 255))
-            overlay = add_rectangles_to_frame(overlay, preds[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)], (0, 255, 0))
-            put_text_top_left(overlay, f"AP: {aps[i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)]:.5f}, Frame: {i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)}. mAP of full video: {map:.5f}")
-            
-            #resize overlay to 500x500x3
-            overlay = cv2.resize(overlay, (750, 500))
-
-            writer.append_data(overlay)
-
-            if i - int(total_frames * gv.Params.FRAMES_PERCENTAGE) == max_frame:
-                break
+        #resize overlay to original size / 5
+        overlay = cv2.resize(overlay, (int(overlay.shape[1] / 3), int(overlay.shape[0] / 3)))
+        frames.append(overlay)
+        if i - int(total_frames * gv.Params.FRAMES_PERCENTAGE) == max_frame:
+            break
+    imageio.mimsave(f"{gv.Params.PATH_RUN}/GIF2.gif", frames, duration=20, loop=1)
 
 def save_frames(cap, binary_frames, max_frame, total_frames, gt, preds, aps, map):
     cap.set(cv2.CAP_PROP_POS_FRAMES, int(total_frames * gv.Params.FRAMES_PERCENTAGE))
@@ -131,7 +121,7 @@ def gt_bbox(frame_dict, frame_number):
 
 def gt_bboxes(frame_dict, total_frames):
     gt = []
-    for i in range(int(total_frames * gv.Params.FRAMES_PERCENTAGE), total_frames):
+    for i in range(total_frames):
         gt.append(gt_bbox(frame_dict, i))
     return gt
 
