@@ -2,7 +2,7 @@ from ultralytics import YOLO
 import yaml
 
 
-path_to_dataset = '/home/franmuline/Master_Workspace/C6/mcv-c6-2024-team5/W2/yolo/dataset.yaml'
+path_to_dataset = '/W2/scripts/dataset.yaml'
 path_to_hyperparameters = '/home/franmuline/Master_Workspace/C6/mcv-c6-2024-team5/W2/scripts/runs/detect/tune/best_hyperparameters.yaml'
 
 with open(path_to_hyperparameters, 'r') as file:
