@@ -33,7 +33,7 @@ python proc_xml_to_json.py
 To compute the pipeline for the object tracking just execute the following command to run the program choosing the desired tracking method:
 
 ```bash
-python main.py [--color-space {rgb,hsv,yuv,lab,ycrcb}] [--show-binary-frames] [--state-of-the-art] [--tag TAG][--tracking-method {overlap,kalman_sort}]
+python main.py [--tag TAG][--tracking-method {overlap,kalman_sort}]
 ```
 
 With the following options:\
