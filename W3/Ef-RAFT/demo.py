@@ -12,7 +12,7 @@ from PIL import Image
 from raft import RAFT
 from utils import flow_viz
 from utils.utils import InputPadder
-
+import time
 
 
 DEVICE = 'cpu'
@@ -82,10 +82,9 @@ def demo(args):
             padder = InputPadder(image1.shape)
             image1, image2 = padder.pad(image1, image2)
 
-            import time
             start = time.time()
             flow_low, flow_up = model(image1, image2, iters=20, test_mode=True)
-            print(time.time() - start)
+            print('Time Taken: %.2f seconds for image of size (%d, %d, %d)' % (time.time() - start, image1.shape[2], image1.shape[3], image1.shape[1]))
 
             flo = flow_up[0].permute(1,2,0).cpu().numpy()
 
