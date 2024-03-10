@@ -9,3 +9,7 @@ Refer to the [README.md](W1/README.md) file for the instructions.
 ## Week 2 - Object detection and tracking
 
 Refer to the [README.md](W2/README.md) file for the instructions.
+
+## Week 3 - Optical flow
+
+Refer to the [README.md](W3/README.md) file for the instructions.
