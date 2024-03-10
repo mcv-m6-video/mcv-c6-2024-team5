@@ -7,13 +7,28 @@ import argparse
 import pyflow
 import cv2
 
+def save_flow_to_image(u, v, valid, filename):
+    assert u.shape == v.shape == valid.shape, "Mismatch in dimension of flow components and valid mask"
+    
+    # Initialize the flow image with all invalid pixels
+    flow_img = np.zeros((u.shape[0], u.shape[1], 3), dtype=np.uint16)
+    
+    # Set the flow values, scaling and encoding as per KITTI format
+    flow_img[..., 0] = (u * 64.0 + 2**15).astype(np.uint16)
+    flow_img[..., 1] = (v * 64.0 + 2**15).astype(np.uint16)
+    flow_img[..., 2] = valid
+    
+    flow_img_bgr = np.stack((flow_img[:, :, 2], flow_img[:, :, 1], flow_img[:, :, 0]), axis=-1)
+    # Save the image
+    cv2.imwrite(filename, flow_img_bgr)
+
 # Setup argument parser
 parser = argparse.ArgumentParser(description='Compute Coarse2Fine Optical Flow on images in /data directory')
 parser.add_argument('--image1', type=str, help='Path to the first image', default='./data/000045_10.png')
 parser.add_argument('--image2', type=str, help='Path to the second image', default='./data/000045_11.png')
 parser.add_argument('--output_flow', type=str, help='Path to save the flow visualization', default='./data/flow.png')
 parser.add_argument('--output_warped', type=str, help='Path to save the warped second image', default='./data/warped.png')
-parser.add_argument('--output_raw_flow', type=str, help='Path to save the raw flow as numpy file', default='./data/raw_flow.npy')
+parser.add_argument('--output_raw_flow', type=str, help='Path to save the raw flow as numpy file', default='./data/raw_flow.png')
 parser.add_argument('--viz', action='store_true', help='Visualize (i.e., save) output of flow.', default=True)
 
 args = parser.parse_args()
@@ -56,6 +71,7 @@ if args.viz:
     rgb = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
 
     # Save output images
-    np.save(args.output_raw_flow, np.stack((u, v), axis=-1))  # Save the raw flow
+    valid = np.ones(u.shape, dtype=np.uint8)  # Assuming all pixels are valid for the example
+    save_flow_to_image(u, v, valid, args.output_raw_flow)
     cv2.imwrite(args.output_flow, rgb)
     cv2.imwrite(args.output_warped, (im2W[:, :, 0] * 255).astype(np.uint8)) # Assuming im2W is also grayscale
