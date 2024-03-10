@@ -64,10 +64,15 @@ if args.viz:
 
     # Create HSV and RGB visualizations for the flow
     hsv = np.zeros((im1.shape[0], im1.shape[1], 3), dtype=np.uint8)
-    hsv[..., 1] = 255
     mag, ang = cv2.cartToPolar(u, v)
+    # Old: Black for non moving pixels
+    # hsv[..., 1] = 255
+    # hsv[..., 0] = ang * 180 / np.pi / 2
+    # hsv[..., 2] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
+    # New: White for non moving pixels
     hsv[..., 0] = ang * 180 / np.pi / 2
-    hsv[..., 2] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
+    hsv[..., 1] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
+    hsv[..., 2] = 255  # Set value to maximum for full brightness
     rgb = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
 
     # Save output images
