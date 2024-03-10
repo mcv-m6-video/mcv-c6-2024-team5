@@ -1,6 +1,7 @@
 W1/data
 W2/data
 W2/yolo
+W3/data
 
 # .pt files
 *.pt
