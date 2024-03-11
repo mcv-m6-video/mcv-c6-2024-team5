@@ -93,7 +93,10 @@ def demo(args):
 
             flo = flow_up[0].permute(1,2,0).cpu().numpy()
 
-            save_flow_to_image(flo[:,:,0], flo[:,:,1], np.ones_like(flo[:,:,0]), 'flow.png')
+            # get the name of the file of image2
+            name = imfile2.split('/')[-1]
+
+            save_flow_to_image(flo[:,:,0], flo[:,:,1], np.ones_like(flo[:,:,0]), f"./W2_video_of/of_to_{name}")
 
             # save flow
             
