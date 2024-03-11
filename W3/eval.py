@@ -27,7 +27,7 @@ def compute_msen_pepn(pred_flow_u, pred_flow_v, gt_flow_u, gt_flow_v, valid, tau
 
 # Parse arguments
 parser = argparse.ArgumentParser(description='Compute MSEN and PEPN for Optical Flow')
-parser.add_argument('--predicted_flow', type=str, help='Path to the predicted flow .png file', default='./pyflow/local_data/raw_flow.png')
+parser.add_argument('--predicted_flow', type=str, help='Path to the predicted flow .png file', default='./Ef-RAFT/flow.png')
 parser.add_argument('--ground_truth_flow', type=str, help='Path to the ground truth flow .png file', default='./data/training/flow_noc/000045_10.png')
 args = parser.parse_args()
 

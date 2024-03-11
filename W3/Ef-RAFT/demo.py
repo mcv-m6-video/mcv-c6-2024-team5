@@ -86,11 +86,14 @@ def demo(args):
             flow_low, flow_up = model(image1, image2, iters=20, test_mode=True)
             print('Time Taken: %.2f seconds for image of size (%d, %d, %d)' % (time.time() - start, image1.shape[2], image1.shape[3], image1.shape[1]))
 
+            # Undo padding
+            flow_up = padder.unpad(flow_up)
+            image1 = padder.unpad(image1)
+            # image2 = padder.unpad(image2)
+
             flo = flow_up[0].permute(1,2,0).cpu().numpy()
 
             save_flow_to_image(flo[:,:,0], flo[:,:,1], np.ones_like(flo[:,:,0]), 'flow.png')
-
-            import pdb; pdb.set_trace()
 
             # save flow
             
