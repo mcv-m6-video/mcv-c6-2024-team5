@@ -30,8 +30,13 @@ To run the optical flow computation:
 
 1. Use the following Docker command to start the container and mount the `local_data` directory to the `/data` directory inside the container:
 
+    in Linux or macOS:
     ```bash
     docker run -it -v $(pwd)/local_data:/app/data pyflow
+    ```
+    or on Windows:
+    ```bash
+    docker run -it -v %cd%/local_data:/app/data pyflow
     ```
 
 2. Within the Docker container, run the script with the following command format:
