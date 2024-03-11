@@ -27,20 +27,25 @@ def load_image(imfile):
     return img[None].to(DEVICE)
 
 
-def viz(img, flo):
+def save_viz_image(img, flo, save_path, viz=False):
     img = img[0].permute(1,2,0).cpu().numpy()
     flo = flo[0].permute(1,2,0).cpu().numpy()
     
     # map flow to rgb image
     flo = flow_viz.flow_to_image(flo)
-    img_flo = np.concatenate([img, flo], axis=0)
 
-    # import matplotlib.pyplot as plt
-    # plt.imshow(img_flo / 255.0)
-    # plt.show()
+    print(f"Saving visualization to {save_path}...")
+    cv2.imwrite(save_path, flo)
+    if viz:
 
-    cv2.imshow('image', img_flo[:, :, [2,1,0]]/255.0)
-    cv2.waitKey()
+        img_flo = np.concatenate([img, flo], axis=0)
+
+        # import matplotlib.pyplot as plt
+        # plt.imshow(img_flo / 255.0)
+        # plt.show()
+
+        cv2.imshow('image', img_flo[:, :, [2,1,0]]/255.0)
+        cv2.waitKey()
 
 def save_flow_to_image(u, v, valid, filename):
     assert u.shape == v.shape == valid.shape, "Mismatch in dimension of flow components and valid mask"
@@ -54,10 +59,11 @@ def save_flow_to_image(u, v, valid, filename):
     flow_img[..., 2] = valid
     
     flow_img_bgr = np.stack((flow_img[:, :, 2], flow_img[:, :, 1], flow_img[:, :, 0]), axis=-1)
+    print(f"Saving raw flow to {filename}...")
     # Save the image
     cv2.imwrite(filename, flow_img_bgr)
 
-
+VIZ = True
 def demo(args):
     model = torch.nn.DataParallel(RAFT(args))
     model.load_state_dict(torch.load(args.model, map_location=torch.device('cuda')))
@@ -75,8 +81,6 @@ def demo(args):
             image1 = load_image(imfile1)
             image2 = load_image(imfile2)
 
-
-
             padder = InputPadder(image1.shape)
             image1, image2 = padder.pad(image1, image2)
 
@@ -84,31 +88,23 @@ def demo(args):
             flow_low, flow_up = model(image1, image2, iters=20, test_mode=True)
             print('Time Taken: %.2f seconds for image of size (%d, %d, %d)' % (time.time() - start_time, image1.shape[0], image1.shape[1], image1.shape[2]))
 
+            # Undo padding
+            flow_up = padder.unpad(flow_up)
+            image1 = padder.unpad(image1)
+            # image2 = padder.unpad(image2)
+
             flo = flow_up[0].permute(1,2,0).cpu().numpy()
 
-            # save flow to image
-            save_flow_to_image(flo[:,:,0], flo[:,:,1], np.ones_like(flo[:,:,0]), 'flow.png')
+            # get the name of the file of image2
+            if '/' in imfile2:
+                name = imfile2.split('/')[-1]
+            else:
+                name = imfile2.split('\\')[-1]
 
-            # open png image from GT folder
-            #gt = load_image(os.path.join('GT', '000045_10.png'))
+            save_flow_to_image(flo[:,:,0], flo[:,:,1], np.ones_like(flo[:,:,0]), f"./W2_video_of/of_to_{name}")
 
-
-            gt = np.array(Image.open(os.path.join('GT', '000045_10.png'))).astype(np.uint8)
-
-            import pdb; pdb.set_trace()
-            # remove last channel
-            gt = gt[:,:,:2]
-
-
-            gt = torch.from_numpy(gt).permute(2, 0, 1).float()
-            
-            # convert gt size from [2, H, W] to [1, 2, H, W]
-            gt = gt[None].to(DEVICE)
-
-            padder = InputPadder(gt.shape)
-            gt= padder.pad(gt) 
-
-            viz(image1, gt[0])
+            if VIZ:
+                save_viz_image(image1, flow_up, f"./W2_video_of_viz/viz_of_to_{name}")
 
 
 if __name__ == '__main__':

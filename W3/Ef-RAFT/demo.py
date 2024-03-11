@@ -3,11 +3,14 @@ sys.path.append('core')
 
 import argparse
 import os
+os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
 import cv2
 import glob
 import numpy as np
 import torch
+from torch.cuda.amp import autocast
 from PIL import Image
+import gc
 
 from raft import RAFT
 from utils import flow_viz
@@ -15,7 +18,7 @@ from utils.utils import InputPadder
 import time
 
 
-DEVICE = 'cuda'
+DEVICE = 'cpu'
 
 def load_image(imfile):
     img = np.array(Image.open(imfile)).astype(np.uint8)
@@ -64,43 +67,49 @@ def demo(args):
 
 
     model = torch.nn.DataParallel(RAFT(args))
-    model.load_state_dict(torch.load(args.model,map_location=torch.device('cuda')))
+    model.load_state_dict(torch.load(args.model,map_location=torch.device(DEVICE)))
 
     model = model.module
     model.to(DEVICE)
     model.eval()
 
     with torch.no_grad():
-        images = glob.glob(os.path.join(args.path, '*.png')) + \
-                 glob.glob(os.path.join(args.path, '*.jpg'))
+        with autocast():
+            images = glob.glob(os.path.join(args.path, '*.png')) + \
+                    glob.glob(os.path.join(args.path, '*.jpg'))
 
-        images = sorted(images)
-        for imfile1, imfile2 in zip(images[:-1], images[1:]):
-            image1 = load_image(imfile1)
-            image2 = load_image(imfile2)
+            images = sorted(images)
+            for imfile1, imfile2 in zip(images[:-1], images[1:]):
+                image1 = load_image(imfile1)
+                image2 = load_image(imfile2)
 
-            padder = InputPadder(image1.shape)
-            image1, image2 = padder.pad(image1, image2)
+                padder = InputPadder(image1.shape)
+                image1, image2 = padder.pad(image1, image2)
 
-            start = time.time()
-            flow_low, flow_up = model(image1, image2, iters=20, test_mode=True)
-            print('Time Taken: %.2f seconds for image of size (%d, %d, %d)' % (time.time() - start, image1.shape[2], image1.shape[3], image1.shape[1]))
+                start = time.time()
+                flow_low, flow_up = model(image1, image2, iters=10, test_mode=True)
+                print('Time Taken: %.2f seconds for image of size (%d, %d, %d)' % (time.time() - start, image1.shape[2], image1.shape[3], image1.shape[1]))
 
-            # Undo padding
-            flow_up = padder.unpad(flow_up)
-            image1 = padder.unpad(image1)
-            # image2 = padder.unpad(image2)
+                # Undo padding
+                flow_up = padder.unpad(flow_up)
+                image1 = padder.unpad(image1)
+                # image2 = padder.unpad(image2)
 
-            flo = flow_up[0].permute(1,2,0).cpu().numpy()
+                flo = flow_up[0].permute(1,2,0).cpu().numpy()
 
-            # get the name of the file of image2
-            name = imfile2.split('/')[-1]
+                # get the name of the file of image2
+                name = imfile2.split('/')[-1]
 
-            save_flow_to_image(flo[:,:,0], flo[:,:,1], np.ones_like(flo[:,:,0]), f"./W2_video_of/of_to_{name}")
+                save_flow_to_image(flo[:,:,0], flo[:,:,1], np.ones_like(flo[:,:,0]), f"./W2_video_of/of_to_{name}")
 
-            # save flow
-            
-            viz(image1, flow_up)
+                # save flow
+                
+                # viz(image1, flow_up)
+
+                # After each iteration in your for loop:
+                del image1, image2, flow_low, flow_up
+                torch.cuda.empty_cache()
+                gc.collect()
 
 
 if __name__ == '__main__':
