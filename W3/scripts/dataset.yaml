@@ -1,0 +1,9 @@
+# Config file to train YOLOv8 on custom dataset
+# Training and validation datasets (image folder or file, label folder or file)
+path: /home/franmuline/Master_Workspace/C6/mcv-c6-2024-team5/W2/yolo
+train: strategy_b_k0/train/images
+val: strategy_b_k0/valid/images
+
+# Number of classes
+nc: 1
+names: ['car']

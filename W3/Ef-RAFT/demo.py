@@ -15,7 +15,7 @@ from utils.utils import InputPadder
 import time
 
 
-DEVICE = 'cpu'
+DEVICE = 'cuda'
 
 def load_image(imfile):
     img = np.array(Image.open(imfile)).astype(np.uint8)
@@ -64,7 +64,7 @@ def demo(args):
 
 
     model = torch.nn.DataParallel(RAFT(args))
-    model.load_state_dict(torch.load(args.model,map_location=torch.device('cpu')))
+    model.load_state_dict(torch.load(args.model,map_location=torch.device('cuda')))
 
     model = model.module
     model.to(DEVICE)
