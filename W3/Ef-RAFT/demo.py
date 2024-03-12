@@ -3,7 +3,6 @@ sys.path.append('core')
 
 import argparse
 import os
-os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
 import cv2
 import glob
 import numpy as np
@@ -18,7 +17,7 @@ from utils.utils import InputPadder
 import time
 
 
-DEVICE = 'cpu'
+DEVICE = 'cuda'
 
 def load_image(imfile):
     img = np.array(Image.open(imfile)).astype(np.uint8)
@@ -30,20 +29,27 @@ def load_image(imfile):
     return img[None].to(DEVICE)
 
 
-def viz(img, flo):
+def save_viz_image(img, flo, save_path, viz=False):
     img = img[0].permute(1,2,0).cpu().numpy()
     flo = flo[0].permute(1,2,0).cpu().numpy()
     
     # map flow to rgb image
     flo = flow_viz.flow_to_image(flo)
-    img_flo = np.concatenate([img, flo], axis=0)
+    # BGR to RGB
+    flo = flo[:, :, [2, 1, 0]]
 
-    # import matplotlib.pyplot as plt
-    # plt.imshow(img_flo / 255.0)
-    # plt.show()
+    print(f"Saving visualization to {save_path}...")
+    cv2.imwrite(save_path, flo)
+    if viz:
 
-    cv2.imshow('image', img_flo[:, :, [2,1,0]]/255.0)
-    cv2.waitKey()
+        img_flo = np.concatenate([img, flo], axis=0)
+
+        # import matplotlib.pyplot as plt
+        # plt.imshow(img_flo / 255.0)
+        # plt.show()
+
+        cv2.imshow('image', img_flo[:, :, [2,1,0]]/255.0)
+        cv2.waitKey()
 
 def save_flow_to_image(u, v, valid, filename):
     assert u.shape == v.shape == valid.shape, "Mismatch in dimension of flow components and valid mask"
@@ -73,6 +79,7 @@ def demo(args):
     model.to(DEVICE)
     model.eval()
 
+    VIZ = True
     with torch.no_grad():
         with autocast():
             images = glob.glob(os.path.join(args.path, '*.png')) + \
@@ -98,13 +105,17 @@ def demo(args):
                 flo = flow_up[0].permute(1,2,0).cpu().numpy()
 
                 # get the name of the file of image2
-                name = imfile2.split('/')[-1]
+                if '/' in imfile2:
+                    name = imfile2.split('/')[-1]
+                else:
+                    name = imfile2.split('\\')[-1]
 
                 save_flow_to_image(flo[:,:,0], flo[:,:,1], np.ones_like(flo[:,:,0]), f"./W2_video_of/of_to_{name}")
 
                 # save flow
                 
-                # viz(image1, flow_up)
+                if VIZ:
+                    save_viz_image(image1, flow_up, f"./W2_video_of_viz/viz_of_to_{name}")
 
                 # After each iteration in your for loop:
                 del image1, image2, flow_low, flow_up

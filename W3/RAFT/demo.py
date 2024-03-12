@@ -33,6 +33,8 @@ def save_viz_image(img, flo, save_path, viz=False):
     
     # map flow to rgb image
     flo = flow_viz.flow_to_image(flo)
+    # BGR to RGB
+    flo = flo[:, :, [2, 1, 0]]
 
     print(f"Saving visualization to {save_path}...")
     cv2.imwrite(save_path, flo)
