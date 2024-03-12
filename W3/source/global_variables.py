@@ -29,10 +29,11 @@ def init():
     PATH_TO_VIDEO = f"{PATH_TO_DATA}train/S03/c010/vdo.avi"
     PATH_TO_OUTPUT = "./output/"
     PATH_TO_MODEL = "./best_all.pt"
+    PATH_TO_OF = "./W2_video_of"
 
     parser = argparse.ArgumentParser(description='C6 Team 5 - Week 2')
     parser.add_argument('--tag', type=str, default="", help='Tag for the output folder')
-    parser.add_argument('--tracking-method', type=str, default="kalman_sort", choices=["overlap", "kalman_sort"], help="Choose the tracking method")
+    parser.add_argument('--tracking-method', type=str, default="overlap_plus_of", choices=["overlap", "kalman_sort", "overlap_plus_of"], help="Choose the tracking method")
     parser.add_argument('--show-tracking', action="store_true", help="Show the tracking")
     parser.add_argument('--save-for-track-eval', action="store_true", help="Save the tracking for evaluation")
     parser.add_argument('--frames-percentage', type=float, default=0.25, help="Amount of frames to skip when doing the tracking evaluation. Default is 0.25 (25%)")
