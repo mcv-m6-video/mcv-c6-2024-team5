@@ -1,7 +1,8 @@
 import cv2
+import time
 from source.data_io import load_video, load_frame_dict, gt_bboxes, calculate_mAP, init_output_folder, save_gif, save_for_track_eval
 from source.metrics import compute_video_ap
-from source.tracking import overlap_tracking, tracking_kalman_sort
+from source.tracking import overlap_tracking, tracking_kalman_sort, overlap_plus_of_tracking
 import source.global_variables as gv
 from source.inference import predict
 from source.visualization import show_tracking
@@ -22,10 +23,15 @@ def main():
 
     # Call the appropriate tracking function
     preds_with_ids = []
+    t0 = time.time()
     if gv.Params.TRACKING_METHOD == 'overlap':
         preds_with_ids = overlap_tracking(preds)
     elif gv.Params.TRACKING_METHOD == 'kalman_sort':
         preds_with_ids = tracking_kalman_sort(preds)
+    elif gv.Params.TRACKING_METHOD == 'overlap_plus_of':
+        preds_with_ids = overlap_tracking(preds, use_of=True)
+    t1 = time.time()
+    print(f"Tracking took {t1 - t0} seconds")
 
     if gv.Params.SHOW_TRACKING:
         if len(preds_with_ids) > 0:
