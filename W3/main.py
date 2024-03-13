@@ -35,7 +35,7 @@ def main():
 
     if gv.Params.SHOW_TRACKING:
         if len(preds_with_ids) > 0:
-            show_tracking(cap, total_frames, gt, preds_with_ids, aps, map)
+            show_tracking(cap, total_frames, preds_with_ids)
 
     # save_gif(cap, 250, total_frames, gt, new_preds, aps, map)
 

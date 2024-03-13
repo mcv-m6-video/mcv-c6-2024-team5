@@ -113,6 +113,9 @@ def tracking_kalman_sort(preds):
     new_preds = []
     for pred in preds:
         np_pred = np.array(pred)
+        if len(np_pred) == 0:
+            new_preds.append([])
+            continue
         pred_with_ids = tracker.update(np_pred)
         # Transform them to list of lists
         pred_with_ids = pred_with_ids.astype(int).tolist()

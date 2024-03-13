@@ -21,14 +21,17 @@ def params_as_dict():
     return {key: value for key, value in vars(Params).items() if not key.startswith("__")}
 
 def init():
-    global PATH_TO_DATA, PATH_TO_VIDEO, PATH_TO_TMP, PATH_TO_OUTPUT, PATH_TO_MODEL
+    global PATH_TO_DATA, PATH_TO_VIDEO, PATH_TO_TMP, PATH_TO_OUTPUT, PATH_TO_MODEL, PATH_TO_OF
+    global SEQ, CAM
     global Params
 
     # STATIC
-    PATH_TO_DATA = 'data/AICity_data/'
-    PATH_TO_VIDEO = f"{PATH_TO_DATA}train/S03/c010/vdo.avi"
+    PATH_TO_DATA = 'scripts/aic19-track1-mtmc-train/train/'
+    SEQ = "S03"
+    CAM = "c010"
+    PATH_TO_VIDEO = f"{PATH_TO_DATA}{SEQ}/{CAM}/vdo.avi"
     PATH_TO_OUTPUT = "./output/"
-    PATH_TO_MODEL = "./best_all.pt"
+    PATH_TO_MODEL = "./best_all.pt"  # "f"scripts/runs/detect/train_{SEQ}/weights/best.pt"
     PATH_TO_OF = "./W2_video_of"
 
     parser = argparse.ArgumentParser(description='C6 Team 5 - Week 2')
@@ -42,7 +45,8 @@ def init():
     # Update Params values
     Params.TRACKING_METHOD = args.tracking_method
     Params.PATH_RUN = f"{PATH_TO_OUTPUT}{Params.TAG}{Params.TRACKING_METHOD}/"
-    Params.SHOW_TRACKING = args.show_tracking
-    Params.SAVE_FOR_TRACK_EVAL = args.save_for_track_eval
+    Params.SHOW_TRACKING = False
+    Params.SAVE_FOR_TRACK_EVAL = False
     Params.FRAMES_PERCENTAGE = args.frames_percentage
+    Params.CAM = CAM
     log_params()

@@ -62,7 +62,7 @@ def save_visualizations(mean_to_viz, std_to_viz, start=True):
     cv2.imwrite(f"{gv.Params.PATH_RUN}mean_{phase_tag}.png", mean_to_viz)
     cv2.imwrite(f"{gv.Params.PATH_RUN}std_{phase_tag}.png", std_to_viz)
 
-def save_gif(cap,max_frame, total_frames, gt, preds, aps, map):
+def save_gif(cap, max_frame, total_frames, preds, gt=None, aps=None, map=None):
     frames = []
     cap.set(cv2.CAP_PROP_POS_FRAMES, int(total_frames * gv.Params.FRAMES_PERCENTAGE))
     for i in range(int(total_frames * gv.Params.FRAMES_PERCENTAGE), total_frames):
@@ -70,9 +70,18 @@ def save_gif(cap,max_frame, total_frames, gt, preds, aps, map):
         if not ret:
             break
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        overlay = add_rectangles_to_frame_with_id(frame, gt[i], (0, 0, 255))
-        overlay = add_rectangles_to_frame_with_id(overlay, preds[i], (0, 255, 0))
-        put_text_top_left(overlay, f"AP: {aps[i]:.5f}, Frame: {i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)}. mAP of full video: {map:.5f}")
+        overlay = frame
+        if len(preds[i]) > 0:
+            overlay = add_rectangles_to_frame_with_id(overlay, preds[i], (0, 255, 0))
+        if gt is not None and len(gt[i]) > 0:
+            overlay = add_rectangles_to_frame_with_id(overlay, gt[i], (0, 0, 255))
+
+        text = f"Frame: {i - int(total_frames * gv.Params.FRAMES_PERCENTAGE)}"
+        if aps is not None:
+            text += f", AP: {aps[i]:.5f}"
+        if map is not None:
+            text += f", mAP of full video: {map:.5f}"
+        put_text_top_left(overlay, text)
 
         #resize overlay to original size / 5
         overlay = cv2.resize(overlay, (int(overlay.shape[1] / 3), int(overlay.shape[0] / 3)))
@@ -80,7 +89,7 @@ def save_gif(cap,max_frame, total_frames, gt, preds, aps, map):
         if i - int(total_frames * gv.Params.FRAMES_PERCENTAGE) == max_frame:
             break
     # Make it loop forever
-    imageio.mimsave(f"{gv.Params.PATH_RUN}/GIF2.gif", frames, duration=20, loop=0)
+    imageio.mimsave(f"{gv.Params.PATH_RUN}/{gv.Params.CAM}_GIF2.gif", frames, duration=60, loop=0)
 
 def save_frames(cap, binary_frames, max_frame, total_frames, gt, preds, aps, map):
     cap.set(cv2.CAP_PROP_POS_FRAMES, int(total_frames * gv.Params.FRAMES_PERCENTAGE))
@@ -217,7 +226,7 @@ def read_bounding_boxes_from_pkl(file_path):
 
 
 def save_for_track_eval(preds_with_ids):
-    with open(f"{gv.Params.PATH_RUN}track_eval.txt", "w") as file:
+    with open(f"{gv.Params.PATH_RUN}{gv.Params.CAM}_track_eval.txt", "w") as file:
         for i, preds in enumerate(preds_with_ids):
             # Order the predictions by object id
             preds = sorted(preds, key=lambda x: x[5])
