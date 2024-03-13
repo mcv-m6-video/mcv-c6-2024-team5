@@ -27,6 +27,20 @@ data
 This is, for the moment, the only data that is going to be used from the KITTI dataset. The `{10_11}` is a placeholder for the two digits that represent the frame number. The `xxx` is a placeholder for the three digits that represent the sequence number.
 Get the data from the [KITTI website](https://www.cvlibs.net/datasets/kitti/eval_stereo_flow.php?benchmark=stereo) and click on the "Download stero/optical flow data set (2 GB)" link. (Registration required)
 
+## Optical Flow with block matching
+
+The script to execute the optical flow with block matching is located in the scripts folder. The script is called block_matching_tss.py and it can be executed with the following command:
+```bash"
+python block_matching_tss.py --img1 path_to_image1 --img2 path_to_image2 --gt_flow path_to_ground_truth_flow --visualize --motion_direction [forward, backward]
+```
+where: 
+- `path_to_image1` is the path to the first image of the sequence.
+- `path_to_image2` is the path to the second image of the sequence.
+- `path_to_ground_truth_flow` is the path to the ground truth optical flow. It is only used to compute the error metrics. 
+- `--visualize` is an optional parameter that can be used to visualize the optical flow.
+- `--motion_direction` is an optional parameter that can be used to indicate the direction of the motion, from img1 to img2 or vice versa. It can be either "forward" or "backward".
+
+
 ## Off the shelf methods
 The following methods are going to be used to compute the optical flow:
 - [Pyflow](https://github.com/pathak22/pyflow?tab=readme-ov-file), project based ont the [Coarse2Fine Optical Flow](https://people.csail.mit.edu/celiu/OpticalFlow/) method.
