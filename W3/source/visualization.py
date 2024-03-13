@@ -112,15 +112,23 @@ def display_frame_with_overlay(frame, gt_boxes, pred_boxes, pred_confidences, ap
     return frame
 
 
-def show_tracking(cap, total_frames, gt, preds, aps, map):
+def show_tracking(cap, total_frames, preds, gt=None, aps=None, map=None):
     cap.set(cv2.CAP_PROP_POS_FRAMES, int(total_frames * gv.Params.FRAMES_PERCENTAGE))
     for i in range(int(total_frames * gv.Params.FRAMES_PERCENTAGE), total_frames):
         ret, frame = cap.read()
         if not ret:
             break
         # combine binary_frame as an overlay of frame with the binarization in pink color
-        overlay = add_rectangles_to_frame_with_id(frame, gt[i], (0, 0, 255))
-        overlay = add_rectangles_to_frame_with_id(overlay, preds[i], (0, 255, 0))
-        put_text_top_left(overlay, f"AP: {aps[i]:.5f}, Frame: {i}. mAP of full video: {map:.5f}")
+        overlay = frame
+        if len(preds[i]) > 0:
+            overlay = add_rectangles_to_frame_with_id(frame, preds[i], (0, 255, 0))
+        if gt is not None:
+            overlay = add_rectangles_to_frame_with_id(overlay, gt[i], (0, 0, 255))
+        text = f"Frame: {i}"
+        if aps is not None:
+            text = text + f", AP: {aps[i]:.5f}"
+        if map is not None:
+            text = text + f", mAP of full video: {map:.5f}"
+        put_text_top_left(overlay, text)
         cv2.imshow('overlay', overlay)
-        cv2.waitKey(1)
+        cv2.waitKey(0)

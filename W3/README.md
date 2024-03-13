@@ -77,3 +77,20 @@ cd Ef-RAFT
 python .\demo.py --model=models/raft-things.pth --path=data
 ```
 Then you will obtain the results of the optical flow, raw and colorized for a better visualization.
+
+## Object tracking with Optical Flow
+
+#### Requirements
+The optical flow between each of the frames of the video has to be computed previously. 
+The folder where the optical flow is stored has to be indicated in the PATH_TO_OF variable in the global_variables.py file. 
+
+
+#### Execution
+
+To execute the object tracking with optical flow, the method has been added as one of the possible tracking
+methods in the main.py file. To execute it, we just run it as last week's code, but with the --method parameter set to "overlap_plus_of".
+```bash
+python main.py --method overlap_plus_of
+```
+
+The results will be stored in the output folder, in a folder with the same name as the method used.
