@@ -2,6 +2,7 @@ W1/data
 W2/data
 W2/yolo
 W3/data
+W4/data
 
 # .pt files
 *.pt

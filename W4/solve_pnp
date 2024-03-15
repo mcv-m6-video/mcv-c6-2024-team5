@@ -1,0 +1,126 @@
+import os
+import cv2
+import numpy as np
+
+DATA_PATH = 'data/aic19-track1-mtmc-train/train/'
+# Sequence, camera and FPS
+DATA_TREE = {
+    'S01': {
+        'c001': 10,
+        'c002': 10,
+        'c003': 10,
+        'c004': 10,
+        'c005': 10,
+    },
+    'S03': {
+        'c010': 10,
+        'c011': 10,
+        'c012': 10,
+        'c013': 10,
+        'c014': 10,
+        'c015': 8,
+    },
+    'S04': {
+        'c016': 10,
+        'c017': 10,
+        'c018': 10,
+        'c019': 10,
+        'c020': 10,
+        'c021': 10,
+        'c022': 10,
+        'c023': 10,
+        'c024': 10,
+        'c025': 10,
+        'c026': 10,
+        'c027': 10,
+        'c028': 10
+    }
+}
+
+sequence = 1 # S01, S03, S04
+camera = 1 # c001, c002, c003, c004 ... c028
+sequence_str = 'S{:02d}'.format(sequence)
+camera_str = 'c{:03d}'.format(camera)
+fps = DATA_TREE[sequence_str][camera_str]
+camera_path = os.path.join(DATA_PATH, sequence_str, camera_str)
+
+# More paths
+video_path = os.path.join(camera_path, 'vdo.avi')
+gt_path = os.path.join(camera_path, 'gt/gt.txt')
+calibration_path = os.path.join(camera_path, 'calibration.txt')
+# Load calibration matrix
+def load_calibration_matrix(calibration_path):
+    calibration_mat = open(calibration_path, 'r').read()
+    calibration_mat = calibration_mat.split(';')
+    for i in range(len(calibration_mat)):
+        calibration_mat[i] = calibration_mat[i].split(' ')
+        if '\n' in calibration_mat[i]:
+            calibration_mat[i].remove('\n')
+        # Transform to float
+        calibration_mat[i] = list(map(float, calibration_mat[i]))
+    calibration_mat = np.reshape(calibration_mat, (3, 3))
+    return calibration_mat
+
+# Placeholder for the camera matrix (intrinsic parameters)
+# You need to replace these values with your actual camera matrix
+camera_matrix = load_calibration_matrix(calibration_path)
+
+# Distortion coefficients, assumed to be zero if you don't have them
+dist_coeffs = np.zeros((4, 1))
+
+# Load your image
+video = cv2.VideoCapture(video_path)
+# Get the first frame
+image = video.read()[1]
+
+# Initialize list to store image points
+image_points = []
+world_points = []
+
+def click_event(event, x, y, flags, params):
+    # If left click, add point and show it
+    if event == cv2.EVENT_LBUTTONDOWN:
+        image_points.append([x, y])
+        cv2.circle(image, (x, y), 3, (255, 0, 0), -1)
+        cv2.imshow("Image", image)
+        # Ask for the world point
+        world_x = input("Enter the world x coordinate: ")
+        world_y = input("Enter the world y coordinate: ")
+        world_z = input("Enter the world z coordinate: ")
+        world_points.append([float(world_x), float(world_y), float(world_z)])
+    if len(image_points) == 6:
+        # Save points correspondencies in a txt
+        with open(f'points_{sequence_str}_{camera_str}.txt', 'w') as f:
+            for i in range(len(image_points)):
+                f.write(f'{image_points[i][0]} {image_points[i][1]}; {world_points[i][0]} {world_points[i][1]} {world_points[i][2]}\n')
+        # If right click, finish and close the window
+        cv2.destroyAllWindows()
+
+
+# Show the image and set the mouse callback function
+cv2.imshow("Image", image)
+cv2.setMouseCallback("Image", click_event)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+
+# Ensure the image points are in the correct shape
+image_points = np.array(image_points, dtype=np.float32)
+
+# Check if we have the same number of 3D and 2D points
+if len(image_points) == len(world_points):
+    # Solve PnP
+    success, rotation_vector, translation_vector = cv2.solvePnP(world_points, image_points, camera_matrix, dist_coeffs)
+
+    if success:
+        print("Rotation Vector:\n", rotation_vector)
+        print("Translation Vector:\n", translation_vector)
+        # Save intrinscs matrix in a txt with the format of the calibration matrix (R1 R2 R3 T1; R4 R5 R6 T2; R7 R8 R9 T3)
+        with open(f'extrinsics_{sequence_str}_{camera_str}.txt', 'w') as f:
+            for row in np.hstack((rotation_vector, translation_vector)):
+                f.write(' '.join(map(str, row)) + ' ')
+                f.write('; ')
+            
+    else:
+        print("Could not solve PnP.")
+else:
+    print("Number of 2D points does not match the number of 3D points.")
