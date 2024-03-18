@@ -13,7 +13,11 @@ with open("tracking_data/c003_track_eval_histrgb.pkl", "rb") as f:
 # open a .txt file with the tracking data
 pred_track_c003 = pd.read_csv("tracking_data/c003_track_eval_histrgb.txt", sep=" ", header=None)
 
-
+c001_offset =  0
+c002_offset = 1.640
+c003_offset = 2.049
+c004_offset = 2.177
+c005_offset = 2.235
 
 # assume c003 is a nested dictionary with stucture {file: {frame: {id: {"xtl": x1, "ytl": y1, "xbr": x2, "ybr": y2, "hist": hist}}}}
 
@@ -28,16 +32,18 @@ for file_track in list(c003):
                 ids_list = []
                 for file in list(c002):
                     for frame in list(c002[file]):
-                        for id in list(c002[file][frame]):
-                            # if the histograms are all nan values then the similarity index is set to inf
-                            if np.isnan(c003[file_track][frame_track][id_track]["hist"]).all() or np.isnan(c002[file][frame][id]["hist"]).all():
-                                sim = np.inf
-                            
-                            else:
-                                sim = cv2.compareHist(np.array(c003[file_track][frame_track][id_track]["hist"]), np.array(c002[file][frame][id]["hist"]), cv2.HISTCMP_CHISQR)
+                        offset = int((c003_offset - c002_offset)*10)
+                        if frame_track > (frame+offset)-5 and frame_track < (frame+offset)+5:
+                            for id in list(c002[file][frame]):
+                                # if the histograms are all nan values then the similarity index is set to inf
+                                if np.isnan(c003[file_track][frame_track][id_track]["hist"]).all() or np.isnan(c002[file][frame][id]["hist"]).all():
+                                    sim = np.inf
+                                
+                                else:
+                                    sim = cv2.compareHist(np.array(c003[file_track][frame_track][id_track]["hist"]), np.array(c002[file][frame][id]["hist"]), cv2.HISTCMP_CHISQR)
 
-                            sim_list.append(sim)
-                            ids_list.append(id)
+                                sim_list.append(sim)
+                                ids_list.append(id)
                 if sim_list != []:
                     sim_list = np.array(sim_list)
                     ids_list = np.array(ids_list)   
