@@ -60,14 +60,14 @@ def crop_and_save_image(video_path, frame, bbox, save_path):
     cv2.imwrite(save_path, crop)
     return True
 
-def generate_triplets(gt, sequence, num_triplets=100):
+def generate_triplets(gt, sequence, last_index, num_triplets=100):
     # Directory for saving crops
     save_dir = os.path.join(DATA_PATH, sequence, 'triplets')
     os.makedirs(save_dir, exist_ok=True)
 
     triplets = []
     unique_ids = np.unique(gt[:, 1])
-    i = 0
+    i = last_index
 
     while len(triplets) < num_triplets:
         # Randomly select an anchor ID
@@ -107,7 +107,10 @@ def generate_triplets(gt, sequence, num_triplets=100):
 
         triplets.append((anchor_frame_row[0], positive_frame_row[0], negative_frame_row[0]))
         i += 1
+    
+    return i
 
+last_index = 200
 # Assuming you've stacked all GTs for each sequence in a single array, here's how you'd call the function
 for sequence_str in DATA_TREE.keys():
     gt_combined = None  # Placeholder for combined GT arrays
@@ -126,4 +129,4 @@ for sequence_str in DATA_TREE.keys():
             gt_combined = np.vstack((gt_combined, gt))
     
     # Now gt_combined contains all GTs for the sequence
-    generate_triplets(gt_combined, sequence_str, 100)
+    last_index = generate_triplets(gt_combined, sequence_str, last_index, 100)
