@@ -1,7 +1,7 @@
 import os
 from torch.utils.data import Dataset, DataLoader
 from torchvision.io import read_image
-from torchvision.transforms import Compose, Resize, Normalize, ToTensor
+from torchvision.transforms import Compose, Resize, Normalize, ToTensor, Lambda
 import torch
 from torch import nn
 from efficientnet_pytorch import EfficientNet
@@ -11,10 +11,15 @@ SEQUENCES = ["S0103", "S0104", "S0304"]
 
 ## CONFIG ##
 
-choosen_sequence = SEQUENCES[0]
+choosen_sequence = SEQUENCES[2]
 DATA_PATH = f'data/triplets_data/{choosen_sequence}'
 MODELS_PATH = 'models'
-mode = "train" # "train" or "test"
+mode = "test" # "train" or "test"
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+TEST_SEQUENCES = ["S01", "S03", "S04"]
+test_sequence = TEST_SEQUENCES[2]
+TEST_PATH = f'data/aic19-track1-mtmc-train/train/{test_sequence}/triplets'
 
 ## DATA LOADING ##
 
@@ -67,9 +72,6 @@ transform = Compose([
     Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
 ])
 
-dataset = TripletDataset(root_dir=DATA_PATH, transform=transform)
-dataloader = DataLoader(dataset, batch_size=4, shuffle=True)
-
 ## MODEL DEFINITION ##
 
 class TripletEfficientNet(nn.Module):
@@ -83,39 +85,92 @@ class TripletEfficientNet(nn.Module):
 
 triplet_loss = nn.TripletMarginLoss(margin=1.0)
 
-match mode:
-    case "train":
-        ## TRAINING ##
-        model = TripletEfficientNet()
-        optimizer = Adam(model.parameters(), lr=0.001)
+def main():
+    match mode:
+        case "train":
+            dataset = TripletDataset(root_dir=DATA_PATH, transform=transform)
+            dataloader = DataLoader(dataset, batch_size=8, shuffle=True)
+            ## TRAINING ##
+            model = TripletEfficientNet().to(device)
+            optimizer = Adam(model.parameters(), lr=0.0001)
 
-        # Example training loop
-        num_epochs = 10
-        for epoch in range(num_epochs):
+            # Example training loop
+            num_epochs = 20
+            for epoch in range(num_epochs):
+                for anchors, positives, negatives in dataloader:  # Assuming dataloader is defined
+                    anchors, positives, negatives = anchors.to(device), positives.to(device), negatives.to(device)
+
+                    anchor_embeddings = model(anchors)
+                    positive_embeddings = model(positives)
+                    negative_embeddings = model(negatives)
+
+                    loss = triplet_loss(anchor_embeddings, positive_embeddings, negative_embeddings)
+                    
+                    optimizer.zero_grad()
+                    loss.backward()
+                    optimizer.step()
+                print(f"Epoch {epoch}, Loss: {loss.item()}")
+
+            # Save the model
+            os.makedirs(MODELS_PATH, exist_ok=True)
+            model_path = os.path.join(MODELS_PATH, f'triplet_model_{choosen_sequence}.pt')
+            torch.save(model.state_dict(), model_path)
+        case "test":
+            dataset = TripletDataset(root_dir=TEST_PATH, transform=transform)
+            dataloader = DataLoader(dataset, batch_size=8, shuffle=True)
+            ## TESTING ##
+            model = TripletEfficientNet().to(device)
+            model.load_state_dict(torch.load(f'models/triplet_model_{choosen_sequence}.pt'))
+            model.eval()  # Set the model to evaluation mode
+
+            all_valid_triplets = 0
+            all_triplets = 0
+            distance_threshold = None
+            # Example testing loop
             for anchors, positives, negatives in dataloader:  # Assuming dataloader is defined
+                anchors, positives, negatives = anchors.to(device), positives.to(device), negatives.to(device)
+
                 anchor_embeddings = model(anchors)
                 positive_embeddings = model(positives)
                 negative_embeddings = model(negatives)
 
-                loss = triplet_loss(anchor_embeddings, positive_embeddings, negative_embeddings)
-                
-                optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
-            print(f"Epoch {epoch}, Loss: {loss.item()}")
+                # Compute the distances between the anchor and positive, and anchor and negative
+                positive_distance = (anchor_embeddings - positive_embeddings).pow(2).sum(1)
+                negative_distance = (anchor_embeddings - negative_embeddings).pow(2).sum(1)
 
-        # Save the model
-        os.makedirs(MODELS_PATH, exist_ok=True)
-        model_path = os.path.join(MODELS_PATH, f'triplet_model_{choosen_sequence}.pt')
-        torch.save(model.state_dict(), model_path)
-    case "test":
-        ## INFERENCE ##
+                # The triplet is considered valid if the distance to the positive is smaller than the distance to the negative
+                valid_triplets = positive_distance < negative_distance
+                valid_triplets_len = len(valid_triplets)
+                valid_triplets = valid_triplets.sum().item()
+                print(f"Valid triplets: {valid_triplets} out of {valid_triplets_len}")
+
+                # Mean distance to the positive and negative
+                positive_distance_mean = positive_distance.mean().item()
+                negative_distance_mean = negative_distance.mean().item()
+                print(f"Mean distance to positive: {positive_distance_mean}")
+                print(f"Mean distance to negative: {negative_distance_mean}")
+
+                if distance_threshold is None:
+                    distance_threshold = (positive_distance_mean + negative_distance_mean) / 2
+                else:
+                    distance_threshold = (distance_threshold + (positive_distance_mean + negative_distance_mean) / 2) / 2
+
+                all_valid_triplets += valid_triplets
+                all_triplets += valid_triplets_len
             
-        def get_embedding(model, image):
-            model.eval()  # Set the model to evaluation mode
-            with torch.no_grad():
-                embedding = model(image)
-            return embedding
+            print(f"Total valid triplets: {all_valid_triplets} out of {all_triplets}")
+            print(f"Proposed distance threshold: {distance_threshold}")
 
-        # Assuming `image` is a preprocessed image tensor
-        # embedding = get_embedding(model, image)
+            ## INFERENCE ##
+                
+            # def get_embedding(model, image):
+            #     model.eval()  # Set the model to evaluation mode
+            #     with torch.no_grad():
+            #         embedding = model(image)
+            #     return embedding
+
+            # Assuming `image` is a preprocessed image tensor
+            # embedding = get_embedding(model, image)
+
+if __name__ == "__main__":
+    main()
