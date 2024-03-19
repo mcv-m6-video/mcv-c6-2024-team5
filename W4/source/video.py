@@ -3,7 +3,7 @@ import numpy as np
 
 
 class VideoCaptureWrapper:
-    def __init__(self, video_sources, caps_to_show=4):
+    def __init__(self, video_sources, caps_to_show=6):
         self.video_captures = [cv2.VideoCapture(video_source) for video_source in video_sources]
         self.num_captures = len(self.video_captures)
         self.frames = []
@@ -76,6 +76,8 @@ class VideoCaptureWrapper:
         for frame, bboxes in zip(self.frames, results):
             for bbox in bboxes:
                 frame = cv2.rectangle(frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])), (0, 255, 0), 2)
+                # Write the ID of the tracked bounding box (bbox[4]) in the top left corner of the bounding box
+                cv2.putText(frame, str(int(bbox[5])), (int(bbox[0]), int(bbox[1])), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
             resized_frames.append(cv2.resize(frame, (self.frame_width, self.frame_height)))
         # Create the collage as a black image of the size of the window
         collage = np.zeros((self.window_height, self.window_width, 3), dtype=np.uint8)
