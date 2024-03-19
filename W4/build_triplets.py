@@ -2,6 +2,7 @@ import os
 import numpy as np
 import cv2
 
+SAVE_PATH = 'data/triplets_data/'
 DATA_PATH = 'data/aic19-track1-mtmc-train/train/'
 # Sequence, camera and FPS
 DATA_TREE = {
@@ -33,8 +34,13 @@ DATA_TREE = {
         'c025': 10,
         'c026': 10,
         'c027': 10,
-        'c028': 10
+        'c028': 10,
     }
+}
+DATA_SAVE_FOLDERS = {
+    'S01': ['S0103', 'S0104'],
+    'S03': ['S0103', 'S0304'],
+    'S04': ['S0104', 'S0304']
 }
 
 def get_row_frame(gt, frame_to_find):
@@ -47,7 +53,7 @@ def get_row_id(gt, id_to_find):
 
 # GT format: frame, ID, left, top, width, height, 1, -1, -1, -1
 
-def crop_and_save_image(video_path, frame, bbox, save_path):
+def crop_and_save_image(video_path, frame, bbox, save_paths):
     image = cv2.VideoCapture(video_path)
     image.set(1, frame)
     _, image = image.read()
@@ -57,13 +63,20 @@ def crop_and_save_image(video_path, frame, bbox, save_path):
     if image is None:
         return False
     crop = image[y:y+h, x:x+w]
-    cv2.imwrite(save_path, crop)
+    # cv2.imwrite(save_path, crop)
+    for save_path in save_paths:
+        cv2.imwrite(save_path, crop)
     return True
 
 def generate_triplets(gt, sequence, last_index, num_triplets=100):
     # Directory for saving crops
-    save_dir = os.path.join(DATA_PATH, sequence, 'triplets')
-    os.makedirs(save_dir, exist_ok=True)
+    # save_dir = os.path.join(DATA_PATH, sequence, 'triplets')
+    # os.makedirs(save_dir, exist_ok=True)
+    save_dirs = []
+    for save_to in DATA_SAVE_FOLDERS[sequence]:
+        save_dir = os.path.join(SAVE_PATH, save_to)
+        os.makedirs(save_dir, exist_ok=True)
+        save_dirs.append(save_dir)
 
     triplets = []
     unique_ids = np.unique(gt[:, 1])
@@ -94,23 +107,27 @@ def generate_triplets(gt, sequence, last_index, num_triplets=100):
         # Randomly select a frame for negative
         negative_frame_row = negative_frames[np.random.choice(range(len(negative_frames))), :]
 
+        successes = []
         # Crop and save anchor, positive, negative images
         for idx, row in enumerate([anchor_frame_row, positive_frame_row, negative_frame_row]):
             frame, id, left, top, width, height = row[:6].astype(int)
             camera_str = 'c{:03d}'.format(int(row[-1]))  # Assuming the camera ID is stored in the last column of gt
             video_path = os.path.join(DATA_PATH, sequence, camera_str, 'vdo.avi')
             bbox = [left, top, width, height]
-            save_path = os.path.join(save_dir, f'triplet_{i}_{["anchor", "positive", "negative"][idx]}.jpg')
-            success = crop_and_save_image(video_path, frame, bbox, save_path)
-            if not success:
-                continue
+            # save_path = os.path.join(save_dir, f'triplet_{i}_{["anchor", "positive", "negative"][idx]}.jpg')
+            save_paths = [os.path.join(save_dir, f'triplet_{i}_{["anchor", "positive", "negative"][idx]}.jpg') for save_dir in save_dirs]
+            success = crop_and_save_image(video_path, frame, bbox, save_paths)
+            successes.append(success)
+
+        if not all(successes):
+            continue
 
         triplets.append((anchor_frame_row[0], positive_frame_row[0], negative_frame_row[0]))
         i += 1
     
     return i
 
-last_index = 200
+last_index = 0
 # Assuming you've stacked all GTs for each sequence in a single array, here's how you'd call the function
 for sequence_str in DATA_TREE.keys():
     gt_combined = None  # Placeholder for combined GT arrays
@@ -129,4 +146,4 @@ for sequence_str in DATA_TREE.keys():
             gt_combined = np.vstack((gt_combined, gt))
     
     # Now gt_combined contains all GTs for the sequence
-    last_index = generate_triplets(gt_combined, sequence_str, last_index, 100)
+    last_index = generate_triplets(gt_combined, sequence_str, last_index, 300)
