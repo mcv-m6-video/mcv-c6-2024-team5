@@ -16,7 +16,11 @@ class YOLOv8(nn.Module):
         for result in results:
             f_result = []
             for box in result.boxes.cpu().numpy():
-                f_result.append(box.xyxy.tolist()[0])
+                box_list = box.xyxy.tolist()[0]
+                # Append the confidence to the list
+                conf = box.conf.tolist()[0]
+                box_list.append(conf)
+                f_result.append(box_list)
             f_results.append(f_result)
         return f_results
 

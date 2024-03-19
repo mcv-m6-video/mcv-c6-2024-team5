@@ -3,6 +3,7 @@ import os
 import yaml
 import argparse
 from source import VideoCaptureWrapper, YOLOv8
+from source.tracking import Tracking
 
 
 def main(config):
@@ -11,10 +12,12 @@ def main(config):
     video_sources = [os.path.join(path_to_sequence, camera, 'vdo.avi') for camera in sorted(os.listdir(path_to_sequence))]
     cap = VideoCaptureWrapper(video_sources)
     model = YOLOv8(config['od_model'])
+    tracking_list = [Tracking() for _ in range(cap.num_captures)]
     for i, frames in enumerate(cap):
         t0 = time.time()
         results = model(frames)
-        cap.collage(results)
+        preds_with_ids = [tracking(result) for tracking, result in zip(tracking_list, results)]
+        cap.collage(preds_with_ids)
         t1 = time.time()
         print(f"Time to process the batch: {t1 - t0}")
 
