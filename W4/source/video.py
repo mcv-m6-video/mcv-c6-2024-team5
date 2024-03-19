@@ -1,14 +1,25 @@
+import os
 import cv2
 import numpy as np
 
 
 class VideoCaptureWrapper:
     def __init__(self, video_sources, caps_to_show=6):
-        self.video_captures = [cv2.VideoCapture(video_source) for video_source in video_sources]
-        self.num_captures = len(self.video_captures)
-        self.frames = []
+        self.video_captures = {}
+        self.video_names = {}
+        self.frames = {}
+        for id, video_source in enumerate(video_sources):
+            self.video_captures[id] = cv2.VideoCapture(video_source)
+            self.video_names[id] = video_source
+            self.frames[id] = None
+            # If a eval.txt file exists in the video_source directory, we remove it
+            # We extract the name of the parent directory (the camera) from the video_source
+            camera_name = os.path.basename(os.path.dirname(video_source))
+            if os.path.exists(video_source.replace("vdo.avi", f"{camera_name}_eval.txt")):
+                os.remove(video_source.replace("vdo.avi", f"{camera_name}_eval.txt"))
         self.window_name = "Sequence"
         self.caps_to_show = caps_to_show
+        self.current_frame = 0
 
         self.window_width = 1920
         self.window_height = 1080
@@ -59,25 +70,31 @@ class VideoCaptureWrapper:
         return self
 
     def __next__(self):
-        self.frames = []
-        for cap in self.video_captures:
+        self.frames = {}
+        for id, cap in self.video_captures.items():
             ret, frame = cap.read()
             if not ret:
                 cap.release()
-                self.num_captures -= 1
-                if self.num_captures == 0:
-                    raise StopIteration
-            self.frames.append(frame)
+            else:
+                self.frames[id] = frame
+
+        if len(self.frames) == 0:
+            raise StopIteration
+        self.current_frame += 1
         return self.frames
 
     def collage(self, results):
         """Function to display the frames in a collage. It will resize the frames to fit the collage"""
         resized_frames = []
-        for frame, bboxes in zip(self.frames, results):
+        for (id, frame), bboxes in zip(self.frames.items(), results):
             for bbox in bboxes:
                 frame = cv2.rectangle(frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])), (0, 255, 0), 2)
                 # Write the ID of the tracked bounding box (bbox[4]) in the top left corner of the bounding box
                 cv2.putText(frame, str(int(bbox[5])), (int(bbox[0]), int(bbox[1])), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+                # We need to store the predictions in a .txt file, in the corresponding directory found in self.video_names
+                camera_name = os.path.basename(os.path.dirname(self.video_names[id]))
+                with open(self.video_names[id].replace("vdo.avi", f"{camera_name}_eval.txt"), "a") as file:
+                    file.write(f"{self.current_frame} {int(bbox[5])} {int(bbox[0])} {int(bbox[1])} {int(bbox[2])} {int(bbox[3])} {float(bbox[4])} -1 -1 -1\n")
             resized_frames.append(cv2.resize(frame, (self.frame_width, self.frame_height)))
         # Create the collage as a black image of the size of the window
         collage = np.zeros((self.window_height, self.window_width, 3), dtype=np.uint8)

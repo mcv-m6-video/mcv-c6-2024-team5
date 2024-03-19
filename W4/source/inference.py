@@ -1,7 +1,6 @@
-import torch
 import torch.nn as nn
-import torchvision.transforms as transforms
 from ultralytics import YOLO
+from efficientnet_pytorch import EfficientNet
 
 
 class YOLOv8(nn.Module):
@@ -23,4 +22,14 @@ class YOLOv8(nn.Module):
                 f_result.append(box_list)
             f_results.append(f_result)
         return f_results
+
+
+class TripletEfficientNet(nn.Module):
+    def __init__(self):
+        super(TripletEfficientNet, self).__init__()
+        self.base_model = EfficientNet.from_pretrained('efficientnet-b0')  # Use EfficientNet-B0
+        self.base_model._fc = nn.Linear(self.base_model._fc.in_features, 256)  # Replace the classifier with a new embedding layer
+
+    def forward(self, x):
+        return self.base_model(x)
 

@@ -1,5 +1,5 @@
 # Configuration file to determine the parameters for the S01 experiment
 sequence: data/aic19-track1-mtmc-train/train/S01
 od_model: models/object_detection/S01.pt
-# feature_model: models/feature_extraction/S01.pt
-# feature_d_threshold: 28.8546031024307
+feature_model: models/feature_extraction/triplet_model_S0304.pt
+feature_d_threshold: 10
