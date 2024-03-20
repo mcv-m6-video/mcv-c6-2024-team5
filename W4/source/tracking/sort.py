@@ -219,6 +219,19 @@ class Sort(object):
         self.trackers = []
         self.frame_count = 0
 
+    def change_id(self, old_id, new_id):
+        # Check if new_id is already in use
+        for track in self.trackers:
+            if track.id + 1 == new_id:
+                # If it exists, we delete it
+                self.trackers.remove(track)
+                break
+        # Change the id
+        for track in self.trackers:
+            if track.id + 1 == old_id:
+                track.id = new_id - 1
+        return False
+
     def update(self, dets=np.empty((0, 5))):
         """
         Params:
