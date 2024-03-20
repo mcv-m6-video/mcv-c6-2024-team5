@@ -146,4 +146,4 @@ for sequence_str in DATA_TREE.keys():
             gt_combined = np.vstack((gt_combined, gt))
     
     # Now gt_combined contains all GTs for the sequence
-    last_index = generate_triplets(gt_combined, sequence_str, last_index, 300)
+    last_index = generate_triplets(gt_combined, sequence_str, last_index, 500)

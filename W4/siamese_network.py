@@ -7,17 +7,33 @@ import torch
 from torch import nn
 from efficientnet_pytorch import EfficientNet
 from torch.optim import Adam
+from torch.optim.lr_scheduler import StepLR
+from torchvision.transforms import functional as F
 
+class ToFloatScale(object):
+    """Convert a tensor image to float and scale it to [0, 1]."""
+    def __call__(self, tensor):
+        """
+        Args:
+            tensor (Tensor): Tensor image to be scaled.
+            
+        Returns:
+            Tensor: Scaled tensor image.
+        """
+        return tensor.float() / 255
 
-SEQUENCES = ["S0103", "S0104", "S0304"]
+    def __repr__(self):
+        return self.__class__.__name__ + '()'
+
 
 ## CONFIG ##
 
-combination = 0
+combination = 2
+SEQUENCES = ["S0103", "S0104", "S0304"]
 choosen_sequence = SEQUENCES[combination]
 DATA_PATH = f'data/triplets_data/{choosen_sequence}'
 MODELS_PATH = 'models'
-mode = "train" # "train" or "test"
+mode = "test" # "train" or "test"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 TEST_SEQUENCES = ["S04", "S03", "S01"]
@@ -101,17 +117,19 @@ train_transform = Compose([
     # Resize((256, 256)),
     # RandomResizedCrop((224, 224)),
     Resize((224, 224)),
-    RandomHorizontalFlip(),
-    RandomRotation(10),  # Rotates by degrees (-10, 10)
+    # RandomHorizontalFlip(),
+    # RandomRotation(10),  # Rotates by degrees (-10, 10)
     # Assuming read_image gives tensor in [0, 255], convert to float and scale to [0, 1]
-    ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1),
-    lambda x: x.float() / 255,
+    # ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1),
+    # lambda x: x.float() / 255,
+    ToFloatScale(),
     Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
 ])
 test_transform = Compose([
     Resize((224, 224)),
     # Assuming read_image gives tensor in [0, 255], convert to float and scale to [0, 1]
-    lambda x: x.float() / 255,
+    # lambda x: x.float() / 255,
+    ToFloatScale(),
     Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
 ])
 triplet_loss = nn.TripletMarginLoss(margin=1.0)
@@ -123,18 +141,19 @@ def main():
             dataset = TripletDataset(root_dir=DATA_PATH, transform=train_transform)  # Assuming training mode
             train_dataset, val_dataset = get_dataset_split(dataset)
 
-            train_dataloader = DataLoader(train_dataset, batch_size=8, shuffle=True)
-            val_dataloader = DataLoader(val_dataset, batch_size=8, shuffle=False)
+            train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+            val_dataloader = DataLoader(val_dataset, batch_size=32, shuffle=False)
 
             ## TRAINING ##
             model = TripletEfficientNet().to(device)
             model.train()  # Set the model to training mode
             optimizer = Adam(model.parameters(), lr=0.0001, weight_decay=1e-5)
+            # scheduler = StepLR(optimizer, step_size=6, gamma=0.1)
 
             min_val_loss = float('inf')
             best_model = None
             # Example training loop
-            num_epochs = 20
+            num_epochs = 10
             for epoch in range(num_epochs):
                 running_loss = 0.0
                 for anchors, positives, negatives in train_dataloader:  # Assuming dataloader is defined
@@ -153,6 +172,7 @@ def main():
 
                     running_loss += loss.item()
 
+                # scheduler.step()
                 avg_train_loss = running_loss / len(train_dataloader)
                 avg_val_loss = validate_model(model, val_dataloader, device)
                 print(f"Epoch {epoch}, Avg Train Loss: {avg_train_loss}, Avg Val Loss: {avg_val_loss}")
@@ -171,7 +191,7 @@ def main():
             torch.save(best_model.state_dict(), best_model_path)
         case "test":
             dataset = TripletDataset(root_dir=TEST_PATH, transform=test_transform)
-            dataloader = DataLoader(dataset, batch_size=8, shuffle=True)
+            dataloader = DataLoader(dataset, batch_size=16, shuffle=False)
             ## TESTING ##
             model = TripletEfficientNet().to(device)
             model.load_state_dict(torch.load(f'models/triplet_model_{choosen_sequence}.pt'))
