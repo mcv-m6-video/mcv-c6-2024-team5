@@ -24,6 +24,8 @@ To execute the speed estimation, the velocity.py file should be executed:
 python velocity.py 
 ```
 
+Make sure you have the video files and the pretrained YOLO model in the same directory as velocity.py
+
 ## Multi-camera tracking
 
 ### Training the Triplet Loss model for feature extraction
