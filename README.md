@@ -18,4 +18,4 @@ Refer to the [README.md](W3/README.md) file for the instructions.
 
 Refer to the [README.md](W4/README.md) file for the instructions.
 
-Final project presentation can be found [here]().
+Final project presentation can be found [here](https://docs.google.com/presentation/d/15C1j-4ShceV8BbRUJK0v51Sci0ovfIRN__Xc1RN0zJE/edit?usp=sharing).
