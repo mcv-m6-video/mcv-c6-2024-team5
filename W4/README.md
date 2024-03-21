@@ -18,7 +18,11 @@ In the data folder, the aic19-track1-mtmc-train dataset should be stored. The mo
 
 ## Measuring velocity 
 
-TO COMPLETE
+To execute the speed estimation, the velocity.py file should be executed:
+
+```bash
+python velocity.py 
+```
 
 ## Multi-camera tracking
 
