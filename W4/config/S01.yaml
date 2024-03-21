@@ -2,4 +2,3 @@
 sequence: data/aic19-track1-mtmc-train/train/S01
 od_model: models/object_detection/S01.pt
 feature_model: models/feature_extraction/triplet_model_S0304.pt
-feature_d_threshold: 10
