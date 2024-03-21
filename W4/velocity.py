@@ -10,7 +10,10 @@ from ultralytics import YOLO
 # Function for the tracking with the detections from YOLO and to calculate the speed
 def callback(frame: np.ndarray, _: int) -> np.ndarray:
     # Use the YOLO model to get detections on the frame
-    results = model.predict(frame,classes=[2])[0]
+    if CUSTOM:
+        results = model.predict(frame,classes=[2])[0]
+    else:
+        results = model(frame)[0]
     # Convert the YOLO detections to a custom 'Detections' object
     detections = sv.Detections.from_ultralytics(results)
     # Update the tracker with the new detections
@@ -45,9 +48,10 @@ def callback(frame: np.ndarray, _: int) -> np.ndarray:
             speed = distance / time * 3.6  # Convert to km/h
 
             speed_display = int(speed)  # Convert speed to integer for display
-            speed_limit = 50
+
             # If speed is over 50/80 km/h, draw bounding box in RED
-            if speed_display > speed_limit:
+            speed_limit = 50
+            if speed_display > speed_limit: 
                 cv2.putText(frame, f"Speed: {speed_display} km/h", (int(x2), int(y2)), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2, cv2.LINE_AA)
             else:
                 cv2.putText(frame, f"Speed: {speed_display} km/h", (int(x2), int(y2)), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2, cv2.LINE_AA)
@@ -84,10 +88,8 @@ class ViewTransformer:
         # Add a column of ones to the points for homogeneous coordinates
         ones_column = np.ones((points.shape[0], 1), dtype=np.float32)
         points_homogeneous = np.hstack((points, ones_column))
-
         # Apply the transformation matrix
         transformed_points_homogeneous = np.dot(points_homogeneous, self.m.T)
-
         # Convert back to Cartesian coordinates
         transformed_points = transformed_points_homogeneous[:, :2] / transformed_points_homogeneous[:, 2:]
 
@@ -136,7 +138,7 @@ else:
         [9,   79]]
     ])
 
-model_path = "./S03.pt"
+model_path = "S03.pt"
 # Load the YOLO model
 # model = YOLO(model_path)
 
@@ -155,7 +157,7 @@ label_annotator = sv.LabelAnnotator(text_scale=0.5, text_thickness=2)
 
 # Video file path
 if CUSTOM:
-    video_path = "data/aic19-track1-mtmc-train/train/custom.mp4"
+    video_path = "data/aic19-track1-mtmc-train/train/night_cut.mp4"
 else:
     video_path = "data/aic19-track1-mtmc-train/train/S03/C010/vdo.avi"
 print(f"Reading video from: {video_path}")
@@ -173,7 +175,10 @@ height = int(video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
 view_transformer = ViewTransformer(source=SOURCE, target=TARGET)
 
 # Create video writer for output
-output_path = "output_video_ronda_nit.mp4"
+if CUSTOM:
+    output_path = "output_video_ronda_nit.mp4"
+else:
+    output_path = "output_video.mp4"
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
 out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
 
