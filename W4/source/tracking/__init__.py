@@ -1,2 +1,2 @@
-from .tracking import Tracking
+from .tracking import Tracking, MultiCameraTracking
 from .sort import Sort

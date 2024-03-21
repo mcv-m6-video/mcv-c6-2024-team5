@@ -4,7 +4,7 @@ import yaml
 import argparse
 import torch
 from source import VideoCaptureWrapper, YOLOv8, TripletEfficientNet
-from source.tracking import Tracking
+from source.tracking import Tracking, MultiCameraTracking
 
 
 def main(config):
@@ -18,10 +18,11 @@ def main(config):
     fe_model.load_state_dict(torch.load(config['feature_model']))
 
     tracking_dict = {id: Tracking(embedding_model=fe_model, distance_threshold=config["feature_d_threshold"]) for id in cap.video_captures.keys()}
+    multicam_tracking = MultiCameraTracking(tracking_dict)
     for i, frames in enumerate(cap):
         t0 = time.time()
         results = od_model(list(frames.values()))
-        preds_with_ids = [tracking_dict[id](result, frame, i) for result, (id, frame) in zip(results, frames.items())]
+        preds_with_ids = multicam_tracking(results, frames, i)
         cap.collage(preds_with_ids)
         t1 = time.time()
         print(f"Time to process the batch: {t1 - t0}")

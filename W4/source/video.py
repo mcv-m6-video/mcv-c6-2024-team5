@@ -64,7 +64,8 @@ class VideoCaptureWrapper:
 
         # Create object to save the video
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        self.out = cv2.VideoWriter('output.avi', fourcc, 20.0, (self.window_width, self.window_height))
+        sequence_name = video_sources[0].split("/")[3]
+        self.out = cv2.VideoWriter(f'{sequence_name}_output.avi', fourcc, 20.0, (self.window_width, self.window_height))
 
     def __iter__(self):
         return self
@@ -86,11 +87,13 @@ class VideoCaptureWrapper:
     def collage(self, results):
         """Function to display the frames in a collage. It will resize the frames to fit the collage"""
         resized_frames = []
-        for (id, frame), bboxes in zip(self.frames.items(), results):
+        for i, ((id, frame), bboxes) in enumerate(zip(self.frames.items(), results)):
+            if i not in self.frames:
+                continue
             for bbox in bboxes:
                 frame = cv2.rectangle(frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])), (0, 255, 0), 2)
                 # Write the ID of the tracked bounding box (bbox[4]) in the top left corner of the bounding box
-                cv2.putText(frame, str(int(bbox[5])), (int(bbox[0]), int(bbox[1])), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+                cv2.putText(frame, str(int(bbox[5])), (int(bbox[0]), int(bbox[1])), cv2.FONT_HERSHEY_SIMPLEX, 3, (255, 255, 255), 5, cv2.LINE_AA)
                 # We need to store the predictions in a .txt file, in the corresponding directory found in self.video_names
                 camera_name = os.path.basename(os.path.dirname(self.video_names[id]))
                 with open(self.video_names[id].replace("vdo.avi", f"{camera_name}_eval.txt"), "a") as file:
@@ -101,6 +104,9 @@ class VideoCaptureWrapper:
         # Fill the collage with the frames
         for i in range(self.rows):
             for j in range(self.cols):
+                id = i * self.cols + j
+                if id not in self.frames:
+                    break
                 if len(resized_frames) == 0 or (i * self.cols + j) == self.caps_to_show:
                     break
                 collage[i * self.frame_height:(i + 1) * self.frame_height, j * self.frame_width:(j + 1) * self.frame_width] = resized_frames.pop(0)
