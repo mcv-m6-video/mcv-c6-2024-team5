@@ -28,12 +28,12 @@ class ToFloatScale(object):
 
 ## CONFIG ##
 
-combination = 2
+combination = 1
 SEQUENCES = ["S0103", "S0104", "S0304"]
 choosen_sequence = SEQUENCES[combination]
 DATA_PATH = f'data/triplets_data/{choosen_sequence}'
 MODELS_PATH = 'models'
-mode = "test" # "train" or "test"
+mode = "train" # "train" or "test"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 TEST_SEQUENCES = ["S04", "S03", "S01"]
