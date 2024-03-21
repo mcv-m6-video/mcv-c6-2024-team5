@@ -29,7 +29,35 @@ Make sure you have the video files and the pretrained YOLO model in the same dir
 ## Multi-camera tracking
 
 ### Training the Triplet Loss model for feature extraction
-TO COMPLETE
+First, generate the triplets for the training of the Triplet Loss model. To do this, the build_triplets.py file should be executed:
+
+```bash
+python build_triplets.py
+```
+That will generate 1200 triplets for each sequence in the dataset. The triplets will be stored in the data folder at /triplets and they will be combined; it will combine S03 and S04 at /S0304 to train a model for S01, S01 and S04 at /S0104 to train a model for S03, and S01 and S03 at /S0103 to train a model for S04.
+
+After generating the triplets, the siamese_network.py file should be executed to train the Triplet Loss model, here one run example (do not add parameters if you want to use the default ones):
+
+```bash
+python script_name.py --mode train --combination 0 --lr 0.001 --weight_decay 0.0001 --batch_size 16 --epochs 20
+```
+Where:
+- `--mode train`: Sets the script to training mode.
+- `--combination`: Selects the first sequence combination for training. Index for selecting sequence. 0: S0103 data for S04, 1: S0104 for S03, 2: S0304 for S01.
+- `--data_path`: Specifies the base directory for the dataset.
+- `--models_path`: Specifies the directory to save trained models.
+- `--lr`: Sets the learning rate.
+- `--weight_decay`: Sets the weight decay for regularization.
+- `--batch_size`: Sets the batch size for training.
+- `--epochs`: Sets the number of epochs for training.
+- `--margin`: Sets the margin for the Triplet Loss function.
+
+For testing the model, the siamese_network.py file should be executed with the following arguments:
+
+```bash
+python script_name.py --mode test --combination 0 --batch_size 16
+```
+Where you can compute the mean distance between the anchor and the positive samples and the mean distance between the anchor and the negative samples for a test set.
 
 ### Performing multi-camera tracking
 
