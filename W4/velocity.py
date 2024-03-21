@@ -45,10 +45,9 @@ def callback(frame: np.ndarray, _: int) -> np.ndarray:
             speed = distance / time * 3.6  # Convert to km/h
 
             speed_display = int(speed)  # Convert speed to integer for display
-
+            speed_limit = 50
             # If speed is over 50/80 km/h, draw bounding box in RED
-            if speed_display > 50: #s03 C010
-            # if speed_display > 80: # custom
+            if speed_display > speed_limit:
                 cv2.putText(frame, f"Speed: {speed_display} km/h", (int(x2), int(y2)), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2, cv2.LINE_AA)
             else:
                 cv2.putText(frame, f"Speed: {speed_display} km/h", (int(x2), int(y2)), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2, cv2.LINE_AA)
@@ -156,7 +155,7 @@ label_annotator = sv.LabelAnnotator(text_scale=0.5, text_thickness=2)
 
 # Video file path
 if CUSTOM:
-    video_path = "data/aic19-track1-mtmc-train/train/day.mp4"
+    video_path = "data/aic19-track1-mtmc-train/train/custom.mp4"
 else:
     video_path = "data/aic19-track1-mtmc-train/train/S03/C010/vdo.avi"
 print(f"Reading video from: {video_path}")
