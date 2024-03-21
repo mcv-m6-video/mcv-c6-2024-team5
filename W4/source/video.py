@@ -97,7 +97,7 @@ class VideoCaptureWrapper:
                 # We need to store the predictions in a .txt file, in the corresponding directory found in self.video_names
                 camera_name = os.path.basename(os.path.dirname(self.video_names[id]))
                 with open(self.video_names[id].replace("vdo.avi", f"{camera_name}_eval.txt"), "a") as file:
-                    file.write(f"{self.current_frame} {int(bbox[5])} {int(bbox[0])} {int(bbox[1])} {int(bbox[2])} {int(bbox[3])} {float(bbox[4])} -1 -1 -1\n")
+                    file.write(f"{self.current_frame} {int(bbox[5])} {int(bbox[0])} {int(bbox[1])} {int(bbox[2] - bbox[0])} {int(bbox[3] - bbox[1])} {float(bbox[4])} -1 -1 -1\n")
             resized_frames.append(cv2.resize(frame, (self.frame_width, self.frame_height)))
         # Create the collage as a black image of the size of the window
         collage = np.zeros((self.window_height, self.window_width, 3), dtype=np.uint8)

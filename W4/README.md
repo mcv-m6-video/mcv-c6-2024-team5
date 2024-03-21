@@ -77,4 +77,5 @@ feature_model: path_to_feature_extraction_model
 
 The sequence parameter should be the path to the sequence that will be used for the multi-camera tracking. The od_model parameter should be the path to the object detection model that will be used for the multi-camera tracking. The feature_model parameter should be the path to the feature extraction model that will be used for the multi-camera tracking.
 
+The results of the tracking will be stored in each of the camera folders in the sequence folder with the name 'camera_name_eval.txt'.
 
