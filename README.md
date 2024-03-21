@@ -13,3 +13,9 @@ Refer to the [README.md](W2/README.md) file for the instructions.
 ## Week 3 - Optical flow
 
 Refer to the [README.md](W3/README.md) file for the instructions.
+
+## Week 4 - Multi-camera tracking
+
+Refer to the [README.md](W4/README.md) file for the instructions.
+
+Final project presentation can be found [here]().
