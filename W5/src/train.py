@@ -1,7 +1,9 @@
 """ Main script for training a video classification model on HMDB51 dataset. """
 
+import os
 import argparse
 import torch
+import wandb
 import torch.nn as nn
 from tqdm import tqdm
 from typing import Dict, Iterator
@@ -16,12 +18,12 @@ from utils.early_stopping import EarlyStopping
 
 def train(
         model: nn.Module,
-        train_loader: DataLoader, 
-        optimizer: torch.optim.Optimizer, 
+        train_loader: DataLoader,
+        optimizer: torch.optim.Optimizer,
         loss_fn: nn.Module,
         device: str,
         description: str = ""
-    ) -> None:
+    ) -> (float, float):
     """
     Trains the given model using the provided data loader, optimizer, and loss function.
 
@@ -34,7 +36,8 @@ def train(
         description (str, optional): Additional information for tracking epoch description during training. Defaults to "".
 
     Returns:
-        None
+        acc_mean (float): The mean accuracy of the model on the training dataset.
+        final_loss_mean (float): The mean loss of the model on the training dataset.
     """
     model.train()
     pbar = tqdm(train_loader, desc=description, total=len(train_loader))
@@ -62,15 +65,19 @@ def train(
             acc=(float(hits_iter) / len(labels)),
             acc_mean=(float(hits) / count)
         )
+    acc_mean = float(hits) / count
+    final_loss_mean = loss_train_mean.get_mean()
+    return acc_mean, final_loss_mean
+
 
 
 def evaluate(
-        model: nn.Module, 
-        valid_loader: DataLoader, 
+        model: nn.Module,
+        valid_loader: DataLoader,
         loss_fn: nn.Module,
         device: str,
         description: str = ""
-    ) -> float:
+    ) -> (float, float):
     """
     Evaluates the given model using the provided data loader and loss function.
 
@@ -82,7 +89,8 @@ def evaluate(
         description (str, optional): Additional information for tracking epoch description during training. Defaults to "".
 
     Returns:
-        None
+        acc_mean (float): The mean accuracy of the model on the validation dataset.
+        final_loss_mean (float): The mean loss of the model on the validation dataset.
     """
     model.eval()
     pbar = tqdm(valid_loader, desc=description, total=len(valid_loader))
@@ -95,7 +103,7 @@ def evaluate(
         with torch.no_grad():
             outputs = model(clips)
             # Compute loss (just for logging, not used for backpropagation)
-            loss = loss_fn(outputs, labels) 
+            loss = loss_fn(outputs, labels)
             # Compute metrics
             loss_iter = loss.item()
             hits_iter = torch.eq(outputs.argmax(dim=1), labels).sum().item()
@@ -108,9 +116,9 @@ def evaluate(
                 acc=(float(hits_iter) / len(labels)),
                 acc_mean=(float(hits) / count)
             )
-    
+    acc_mean = float(hits) / count
     final_loss_mean = loss_valid_mean.get_mean()
-    return final_loss_mean
+    return acc_mean, final_loss_mean
 
 def create_datasets(
         frames_dir: str,
@@ -145,7 +153,7 @@ def create_datasets(
             crop_size,
             temporal_stride
         )
-    
+
     return datasets
 
 
@@ -178,7 +186,7 @@ def create_dataloaders(
             num_workers=num_workers,
             pin_memory=pin_memory
         )
-            
+
     return dataloaders
 
 
@@ -209,7 +217,7 @@ def print_model_summary(
         print_model: bool = True,
         print_params: bool = True,
         print_FLOPs: bool = True
-    ) -> None:
+    ) -> (float, float):
     """
     Prints a summary of the given model.
 
@@ -226,20 +234,23 @@ def print_model_summary(
     """
     if print_model:
         print(model)
-
+    num_params = sum(p.numel() for p in model.parameters())
+    # num_params = model_analysis.calculate_parameters(model) # should be equivalent
+    num_params = round(num_params / 10e6, 2)
     if print_params:
-        num_params = sum(p.numel() for p in model.parameters())
-        #num_params = model_analysis.calculate_parameters(model) # should be equivalent
-        print(f"Number of parameters (M): {round(num_params / 10e6, 2)}")
+        print(f"Number of parameters (M): {num_params}")
 
+    num_FLOPs = model_analysis.calculate_operations(model, clip_length, crop_size, crop_size)
+    num_FLOPs = round(num_FLOPs / 10e9, 2)
     if print_FLOPs:
-        num_FLOPs = model_analysis.calculate_operations(model, clip_length, crop_size, crop_size)
-        print(f"Number of FLOPs (G): {round(num_FLOPs / 10e9, 2)}")
+        print(f"Number of FLOPs (G): {num_FLOPs}")
+
+    return num_params, num_FLOPs
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Train a video classification model on HMDB51 dataset.')
-    parser.add_argument('frames_dir', type=str, 
+    parser.add_argument('frames_dir', type=str,
                         help='Directory containing video files')
     parser.add_argument('--annotations-dir', type=str, default="data/hmdb51/testTrainMulti_601030_splits",
                         help='Directory containing annotation files')
@@ -271,6 +282,7 @@ if __name__ == "__main__":
                         help='Device to use for training (cuda or cpu)')
     parser.add_argument('--early-stopping', type=int, default=5,
                         help='Number of epochs to wait after last time validation loss improved')
+    parser.add_argument('--wandb', action='store_true', default=False, help='Use Weights & Biases for logging')
 
     args = parser.parse_args()
 
@@ -297,28 +309,46 @@ if __name__ == "__main__":
     optimizer = create_optimizer(args.optimizer_name, model.parameters(), lr=args.lr)
     loss_fn = nn.CrossEntropyLoss()
 
-    print_model_summary(model, args.clip_length, args.crop_size)
+    num_params, num_FLOPs = print_model_summary(model, args.clip_length, args.crop_size)
 
     model = model.to(args.device)
 
+    if args.wandb:
+        config = vars(args)
+        config['num_params_M'] = num_params
+        config['num_GFLOPs'] = num_FLOPs
+        wandb.init(project="ActionClassificationTask-W5", entity="mcv-c6-2024-team5",
+                   config=config)
+        wandb.watch(model)
+
     for epoch in range(args.epochs):
-            
+
         early_stopper = EarlyStopping(patience=args.early_stopping, verbose=True)  # Initialize the early stopper with desired patience
-        
-        # Validation
-        if epoch % args.validate_every == 0:
-            description = f"Validation [Epoch: {epoch+1}/{args.epochs}]"
-            loss_mean = evaluate(model, loaders['validation'], loss_fn, args.device, description=description)
-            early_stopper(loss_mean)
-            if early_stopper.early_stop:
-                print(f"Early stopping at epoch {epoch+1}")
-                break
         # Training
         description = f"Training [Epoch: {epoch+1}/{args.epochs}]"
-        train(model, loaders['training'], optimizer, loss_fn, args.device, description=description)
+        train_acc_mean, train_loss_mean = train(model, loaders['training'], optimizer, loss_fn, args.device, description=description)
+        if args.wandb:
+            wandb.log({"train_acc": train_acc_mean, "train_loss": train_loss_mean}, step=epoch)
+        # Validation
+        if epoch % args.validate_every == 0:
+            description = f"Validation [Epoch: {epoch + 1}/{args.epochs}]"
+            val_acc_mean, val_loss_mean = evaluate(model, loaders['validation'], loss_fn, args.device, description=description)
+            if args.wandb:
+                wandb.log({"val_acc": val_acc_mean, "val_loss": val_loss_mean}, step=epoch)
+            early_stopper(val_loss_mean)
+            if early_stopper.early_stop:
+                print(f"Early stopping at epoch {epoch + 1}")
+                break
 
     # Testing
-    evaluate(model, loaders['validation'], loss_fn, args.device, description=f"Validation [Final]")
-    evaluate(model, loaders['testing'], loss_fn, args.device, description=f"Testing")
+    test_acc_mean, test_loss_mean = evaluate(model, loaders['testing'], loss_fn, args.device, description=f"Testing")
+    if args.wandb:
+        wandb.log({"test_acc": test_acc_mean, "test_loss": test_loss_mean})
+        wandb.finish()
+
+    # Save model
+    if not os.path.exists("models"):
+        os.makedirs("models")
+    torch.save(model.state_dict(), f"models/{args.model_name}_hmdb51.pth")
 
     exit()
