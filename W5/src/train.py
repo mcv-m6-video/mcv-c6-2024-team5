@@ -15,6 +15,7 @@ from models import model_creator
 from utils import model_analysis
 from utils import statistics
 from utils.early_stopping import EarlyStopping
+from collections import defaultdict
 
 def train(
         model: nn.Module,
@@ -76,7 +77,8 @@ def evaluate(
         valid_loader: DataLoader,
         loss_fn: nn.Module,
         device: str,
-        description: str = ""
+        description: str = "",
+        compute_per_class_acc: bool = False
     ) -> (float, float):
     """
     Evaluates the given model using the provided data loader and loss function.
@@ -87,6 +89,7 @@ def evaluate(
         loss_fn (nn.Module): The loss function used to compute the validation loss (not used for backpropagation)
         device (str): The device on which the model and data should be processed ('cuda' or 'cpu').
         description (str, optional): Additional information for tracking epoch description during training. Defaults to "".
+        compute_per_class_acc (bool, optional): Whether to compute accuracy per class. Defaults to False.
 
     Returns:
         acc_mean (float): The mean accuracy of the model on the validation dataset.
@@ -96,6 +99,9 @@ def evaluate(
     pbar = tqdm(valid_loader, desc=description, total=len(valid_loader))
     loss_valid_mean = statistics.RollingMean(window_size=len(valid_loader))
     hits = count = 0 # auxiliary variables for computing accuracy
+    class_hits = defaultdict(int)
+    class_totals = defaultdict(int)
+
     for batch in pbar:
         # Gather batch and move to device
         clips, labels = batch['clips'].to(device), batch['labels'].to(device)
@@ -116,9 +122,24 @@ def evaluate(
                 acc=(float(hits_iter) / len(labels)),
                 acc_mean=(float(hits) / count)
             )
+
+        if compute_per_class_acc:
+            _, preds = torch.max(outputs, 1)
+            for label, pred in zip(labels, preds):
+                if label == pred:
+                    class_hits[label.item()] += 1
+                class_totals[label.item()] += 1
+    
     acc_mean = float(hits) / count
     final_loss_mean = loss_valid_mean.get_mean()
-    return acc_mean, final_loss_mean
+    if not compute_per_class_acc:
+        return acc_mean, final_loss_mean
+
+    class_accuracies = {cls: class_hits[cls] / class_totals[cls] for cls in class_totals}
+    class_names = valid_loader.dataset.CLASS_NAMES
+    class_accuracies_with_names = {class_names[cls]: acc for cls, acc in class_accuracies.items()}
+
+    return acc_mean, final_loss_mean, class_accuracies_with_names
 
 def create_datasets(
         frames_dir: str,
@@ -332,7 +353,8 @@ if __name__ == "__main__":
         # Validation
         if epoch % args.validate_every == 0:
             description = f"Validation [Epoch: {epoch + 1}/{args.epochs}]"
-            val_acc_mean, val_loss_mean = evaluate(model, loaders['validation'], loss_fn, args.device, description=description)
+            val_acc_mean, val_loss_mean, acc_per_class = evaluate(model, loaders['validation'], loss_fn, args.device, description=description)
+            print(f"Accuracy per class: {acc_per_class}")
             if args.wandb:
                 wandb.log({"val_acc": val_acc_mean, "val_loss": val_loss_mean}, step=epoch)
             early_stopper(val_loss_mean)
@@ -341,7 +363,7 @@ if __name__ == "__main__":
                 break
 
     # Testing
-    test_acc_mean, test_loss_mean = evaluate(model, loaders['testing'], loss_fn, args.device, description=f"Testing")
+    test_acc_mean, test_loss_mean, acc_per_class = evaluate(model, loaders['testing'], loss_fn, args.device, description=f"Testing", compute_per_class_acc=True)
     if args.wandb:
         wandb.log({"test_acc": test_acc_mean, "test_loss": test_loss_mean})
         wandb.finish()
