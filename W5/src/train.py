@@ -263,7 +263,7 @@ if __name__ == "__main__":
                         help='Batch size for the training data loader')
     parser.add_argument('--batch-size-eval', type=int, default=16,
                         help='Batch size for the evaluation data loader')
-    parser.add_argument('--validate-every', type=int, default=5,
+    parser.add_argument('--validate-every', type=int, default=1,
                         help='Number of epochs after which to validate the model')
     parser.add_argument('--num-workers', type=int, default=2,
                         help='Number of worker processes for data loading')
