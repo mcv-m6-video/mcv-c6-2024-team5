@@ -109,7 +109,7 @@ def evaluate(
                 acc_mean=(float(hits) / count)
             )
     
-    final_loss_mean = loss_valid_mean.get()
+    final_loss_mean = loss_valid_mean.get_mean()
     return final_loss_mean
 
 def create_datasets(

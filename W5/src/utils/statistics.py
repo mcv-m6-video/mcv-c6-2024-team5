@@ -12,4 +12,10 @@ class RollingMean:
         if len(self.data) == 0:
             return None
         return sum(self.data) / len(self.data)
+    
+    # Get the current mean
+    def get_mean(self):
+        if len(self.data) == 0:
+            return None
+        return sum(self.data) / len(self.data)
 
