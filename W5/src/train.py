@@ -311,7 +311,7 @@ if __name__ == "__main__":
             loss_mean = evaluate(model, loaders['validation'], loss_fn, args.device, description=description)
             early_stopper(loss_mean)
             if early_stopper.early_stop:
-                print("Early stopping")
+                print(f"Early stopping at epoch {epoch+1}")
                 break
         # Training
         description = f"Training [Epoch: {epoch+1}/{args.epochs}]"
