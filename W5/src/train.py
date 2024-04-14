@@ -12,7 +12,7 @@ from datasets.HMDB51Dataset import HMDB51Dataset
 from models import model_creator
 from utils import model_analysis
 from utils import statistics
-
+from utils.early_stopping import EarlyStopping
 
 def train(
         model: nn.Module,
@@ -70,7 +70,7 @@ def evaluate(
         loss_fn: nn.Module,
         device: str,
         description: str = ""
-    ) -> None:
+    ) -> float:
     """
     Evaluates the given model using the provided data loader and loss function.
 
@@ -108,7 +108,9 @@ def evaluate(
                 acc=(float(hits_iter) / len(labels)),
                 acc_mean=(float(hits) / count)
             )
-
+    
+    final_loss_mean = loss_valid_mean.get()
+    return final_loss_mean
 
 def create_datasets(
         frames_dir: str,
@@ -267,6 +269,8 @@ if __name__ == "__main__":
                         help='Number of worker processes for data loading')
     parser.add_argument('--device', type=str, default='cuda',
                         help='Device to use for training (cuda or cpu)')
+    parser.add_argument('--early-stopping', type=int, default=5,
+                        help='Number of epochs to wait after last time validation loss improved')
 
     args = parser.parse_args()
 
@@ -298,10 +302,17 @@ if __name__ == "__main__":
     model = model.to(args.device)
 
     for epoch in range(args.epochs):
+            
+        early_stopper = EarlyStopping(patience=args.early_stopping, verbose=True)  # Initialize the early stopper with desired patience
+        
         # Validation
         if epoch % args.validate_every == 0:
             description = f"Validation [Epoch: {epoch+1}/{args.epochs}]"
-            evaluate(model, loaders['validation'], loss_fn, args.device, description=description)
+            loss_mean = evaluate(model, loaders['validation'], loss_fn, args.device, description=description)
+            early_stopper(loss_mean)
+            if early_stopper.early_stop:
+                print("Early stopping")
+                break
         # Training
         description = f"Training [Epoch: {epoch+1}/{args.epochs}]"
         train(model, loaders['training'], optimizer, loss_fn, args.device, description=description)
