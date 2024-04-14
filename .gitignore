@@ -4,6 +4,7 @@ W2/yolo
 W3/data
 W4/data
 W4/data_original
+W5/data
 
 # .pt files
 *.pt
