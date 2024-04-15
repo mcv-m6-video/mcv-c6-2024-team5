@@ -347,9 +347,10 @@ if __name__ == "__main__":
         wandb.watch(model)
         model_name = wandb.run.name + "_hmdb51"
 
-    for epoch in range(args.epochs):
+    # Initialize the early stopper with desired patience
+    early_stopper = EarlyStopping(patience=args.early_stopping, verbose=True)
 
-        early_stopper = EarlyStopping(patience=args.early_stopping, verbose=True)  # Initialize the early stopper with desired patience
+    for epoch in range(args.epochs):
         # Training
         description = f"Training [Epoch: {epoch+1}/{args.epochs}]"
         train_acc_mean, train_loss_mean = train(model, loaders['training'], optimizer, loss_fn, args.device, description=description)
@@ -362,7 +363,6 @@ if __name__ == "__main__":
             if args.wandb:
                 wandb.log({"val_acc": val_acc_mean, "val_loss": val_loss_mean}, step=epoch)
             early_stopper(val_loss_mean)
-            print("Patience: ", early_stopper.counter)
             if early_stopper.early_stop:
                 print(f"Early stopping at epoch {epoch + 1}")
                 break
