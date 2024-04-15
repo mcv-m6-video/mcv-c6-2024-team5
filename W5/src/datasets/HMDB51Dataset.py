@@ -54,7 +54,9 @@ class HMDB51Dataset(Dataset):
         regime: Regime, 
         clip_length: int, 
         crop_size: int, 
-        temporal_stride: int
+        temporal_stride: int,
+        views_per_video: int,
+        crops_per_view: int
     ) -> None:
         """
         Initialize HMDB51 dataset.
@@ -76,6 +78,8 @@ class HMDB51Dataset(Dataset):
         self.clip_length = clip_length
         self.crop_size = crop_size
         self.temporal_stride = temporal_stride
+        self.views_per_video = views_per_video
+        self.crops_per_view = crops_per_view
 
         self.annotation = self._read_annotation()
         self.transform = self._create_transform()

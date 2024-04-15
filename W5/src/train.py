@@ -308,9 +308,14 @@ if __name__ == "__main__":
     parser.add_argument('--wandb', action='store_true', default=False, 
                         help='Use Weights & Biases for logging')
     parser.add_argument('--load-model', type=str, default=None,
-                        help='Load a model from a file (for testing purposes)')
+                        help='Load a model from a file')
     parser.add_argument('--only-inference', action='store_true', default=False,
-                        help='Only perform inference on the test set (requires a model to load)')
+                        help='Only perform inference on the test set (requires a model [--load-model] to load)')
+    parser.add_argument('--views-per-video', type=int, default=1,
+                        help='Number of clips to sample per video')
+    parser.add_argument('--crops-per-view', type=int, default=1,
+                        help='Number of spatial crops to sample per clip')
+    
 
     args = parser.parse_args()
 
@@ -321,7 +326,9 @@ if __name__ == "__main__":
         split=HMDB51Dataset.Split.TEST_ON_SPLIT_1, # hardcoded
         clip_length=args.clip_length,
         crop_size=args.crop_size,
-        temporal_stride=args.temporal_stride
+        temporal_stride=args.temporal_stride,
+        views_per_video=args.views_per_video,
+        crops_per_view=args.crops_per_view
     )
 
     # Create data loaders
