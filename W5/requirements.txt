@@ -3,3 +3,4 @@ torchvision>=0.17
 fvcore
 pandas==2.2.1
 wandb
+matplotlib

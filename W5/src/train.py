@@ -1,6 +1,7 @@
 """ Main script for training a video classification model on HMDB51 dataset. """
 
 import os
+import json
 import argparse
 import torch
 import wandb
@@ -14,6 +15,7 @@ from datasets.HMDB51Dataset import HMDB51Dataset
 from models import model_creator
 from utils import model_analysis
 from utils import statistics
+from utils import visualization
 from utils.early_stopping import EarlyStopping
 from collections import defaultdict
 
@@ -334,6 +336,8 @@ if __name__ == "__main__":
 
     model = model.to(args.device)
 
+    model_name = args.model_name + "_hmdb51"
+
     if args.wandb:
         config = vars(args)
         config['num_params_M'] = num_params
@@ -341,6 +345,7 @@ if __name__ == "__main__":
         wandb.init(project="ActionClassificationTask-W5", entity="mcv-c6-2024-team5",
                    config=config)
         wandb.watch(model)
+        model_name = wandb.run.name + "_hmdb51"
 
     for epoch in range(args.epochs):
 
@@ -353,24 +358,45 @@ if __name__ == "__main__":
         # Validation
         if epoch % args.validate_every == 0:
             description = f"Validation [Epoch: {epoch + 1}/{args.epochs}]"
-            val_acc_mean, val_loss_mean, acc_per_class = evaluate(model, loaders['validation'], loss_fn, args.device, description=description)
-            print(f"Accuracy per class: {acc_per_class}")
+            val_acc_mean, val_loss_mean = evaluate(model, loaders['validation'], loss_fn, args.device, description=description)
             if args.wandb:
                 wandb.log({"val_acc": val_acc_mean, "val_loss": val_loss_mean}, step=epoch)
             early_stopper(val_loss_mean)
+            print("Patience: ", early_stopper.counter)
             if early_stopper.early_stop:
                 print(f"Early stopping at epoch {epoch + 1}")
                 break
 
     # Testing
     test_acc_mean, test_loss_mean, acc_per_class = evaluate(model, loaders['testing'], loss_fn, args.device, description=f"Testing", compute_per_class_acc=True)
+
+    # Check if results folder exists
+    if not os.path.exists("results"):
+        os.makedirs("results")
+    save_path = f"results/{model_name}"
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
     if args.wandb:
         wandb.log({"test_acc": test_acc_mean, "test_loss": test_loss_mean})
-        wandb.finish()
+        plt = visualization.plot_acc_per_class(acc_per_class, save_path=save_path + "/acc_per_class.png")
+        wandb.log({"acc_per_class": wandb.Image(plt)})
+    else:
+        plt = visualization.plot_acc_per_class(acc_per_class, save_path=save_path + "/acc_per_class.png")
+        plt.show()
+        # Save the acc_per_class dictionary to a json file
+    with open(save_path + "/acc_per_class.json", "w") as f:
+        json.dump(acc_per_class, f)
 
     # Save model
-    if not os.path.exists("models"):
-        os.makedirs("models")
-    torch.save(model.state_dict(), f"models/{args.model_name}_hmdb51.pth")
+    if not os.path.exists("weights"):
+        os.makedirs("weights")
+    model_save_path = f"weights/{model_name}.pth"
+    torch.save(model.state_dict(), model_save_path)
+    if args.wandb:
+        artifact = wandb.Artifact("model", type="model")
+        artifact.add_file(model_save_path)
+        artifact.add_file(save_path + "/acc_per_class.json")
+        wandb.log_artifact(artifact, type="model")
+        wandb.finish()
 
     exit()
