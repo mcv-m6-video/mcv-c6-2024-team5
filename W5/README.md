@@ -134,3 +134,8 @@ Then, just take into account that HMDB51 was thought to be evaluated in 3-fold c
 If not specified, default values should allow you to run the script without issues.
 
 Check the implementation to understand the different parts of the code.
+
+Example run:
+```bash
+$ python .\src\train.py --load-model weights/baseline_run_weights.pth  data/frames
+```	
