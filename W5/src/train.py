@@ -309,6 +309,8 @@ if __name__ == "__main__":
                         help='Use Weights & Biases for logging')
     parser.add_argument('--load-model', type=str, default=None,
                         help='Load a model from a file (for testing purposes)')
+    parser.add_argument('--only-inference', action='store_true', default=False,
+                        help='Only perform inference on the test set (requires a model to load)')
 
     args = parser.parse_args()
 
@@ -352,6 +354,14 @@ if __name__ == "__main__":
                    config=config)
         wandb.watch(model)
         model_name = wandb.run.name + "_hmdb51"
+
+    if args.only_inference:
+        if not args.load_model:
+            raise ValueError("Please provide a model to load for inference")
+        test_acc_mean, test_loss_mean, acc_per_class = evaluate(model, loaders['testing'], loss_fn, args.device, description=f"Testing", compute_per_class_acc=True)
+        print(f"Test accuracy: {test_acc_mean}, Test loss: {test_loss_mean}")
+        print(acc_per_class)
+        exit()
 
     # Initialize the early stopper with desired patience
     early_stopper = EarlyStopping(patience=args.early_stopping, verbose=True)
