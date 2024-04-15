@@ -149,7 +149,9 @@ def create_datasets(
         split: HMDB51Dataset.Split,
         clip_length: int,
         crop_size: int,
-        temporal_stride: int
+        temporal_stride: int,
+        clips_per_video: int,
+        crops_per_clip: int
 ) -> Dict[str, HMDB51Dataset]:
     """
     Creates datasets for training, validation, and testing.
@@ -161,6 +163,8 @@ def create_datasets(
         clip_length (int): Number of frames of the clips.
         crop_size (int): Size of spatial crops (squares).
         temporal_stride (int): Receptive field of the model will be (clip_length * temporal_stride) / FPS.
+        clips_per_video (int): Number of clips to sample from each video.
+        crops_per_clip (int): Number of crops to sample from each clip.
 
     Returns:
         Dict[str, HMDB51Dataset]: A dictionary containing the datasets for training, validation, and testing.
@@ -174,7 +178,9 @@ def create_datasets(
             regime,
             clip_length,
             crop_size,
-            temporal_stride
+            temporal_stride,
+            clips_per_video,
+            crops_per_clip
         )
 
     return datasets
@@ -313,7 +319,7 @@ if __name__ == "__main__":
                         help='Only perform inference on the test set (requires a model [--load-model] to load)')
     parser.add_argument('--clips-per-video', type=int, default=1,
                         help='Number of clips to sample per video')
-    parser.add_argument('--crops-per-clips', type=int, default=1,
+    parser.add_argument('--crops-per-clip', type=int, default=1,
                         help='Number of spatial crops to sample per clip')
     
 

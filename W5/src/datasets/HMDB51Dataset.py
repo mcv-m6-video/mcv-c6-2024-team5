@@ -3,6 +3,7 @@
 import os
 import random
 from enum import Enum
+import numpy as np
 
 from glob import glob, escape
 import pandas as pd
@@ -153,8 +154,8 @@ class HMDB51Dataset(Dataset):
             int: Length (number of videos) of the dataset.
         """
         return len(self.annotation)
-
-
+    
+    # ? Original function
     def __getitem__(self, idx: int) -> tuple:
         """
         Get item (video) from the dataset.
@@ -197,7 +198,56 @@ class HMDB51Dataset(Dataset):
 
         return video, label, video_path
 
-    
+    # ? Modified function
+    # def __getitem__(self, idx: int) -> tuple:
+    #     """
+    #     Get item (video) from the dataset.
+
+    #     Args:
+    #         idx (int): Index of the item (video).
+
+    #     Returns:
+    #         tuple: Tuple containing videos, label, and video path.
+    #     """
+    #     df_idx = self.annotation.iloc[idx]
+
+    #     # Get video path from the annotation dataframe and check if it exists
+    #     video_path = df_idx['video_path']
+    #     assert os.path.exists(video_path), f"Video path does not exist: {video_path}"
+
+    #     # Read frames' paths from the video
+    #     frame_paths = sorted(glob(os.path.join(escape(video_path), "*.jpg")))  # get sorted frame paths
+    #     video_len = len(frame_paths)
+
+    #     clips = []
+    #     if video_len >= self.clip_length * self.temporal_stride:
+    #         # Calculate the indices for starting frames for evenly spaced clips
+    #         max_start_index = video_len - self.clip_length * self.temporal_stride
+    #         clip_starts = np.linspace(0, max_start_index, self.clips_per_video, dtype=int, endpoint=False)
+
+    #         # Collect the clips
+    #         for start in clip_starts:
+    #             clip_frames = [read_image(frame_paths[start + i * self.temporal_stride]) for i in range(self.clip_length)]
+    #             clip = torch.stack(clip_frames)
+    #             clips.append(clip)
+    #     else:
+    #         # If not enough frames for desired number of clips, repeat the available frames
+    #         repeated_frame_paths = frame_paths * (self.clip_length * self.temporal_stride // video_len + 1)
+    #         for i in range(self.clips_per_video):
+    #             start = i * self.temporal_stride % video_len
+    #             clip_frames = [read_image(repeated_frame_paths[start + j * self.temporal_stride]) for j in range(self.clip_length)]
+    #             clip = torch.stack(clip_frames)
+    #             clips.append(clip)
+
+    #     # Stack all clips along the first dimension to get a tensor of shape (num_clips, clip_length, C, H, W)
+    #     clips_tensor = torch.stack(clips, dim=0)
+
+    #     # Get label from the annotation dataframe
+    #     label = df_idx['class_id']
+
+    #     return clips_tensor, label, video_path
+
+    # ? Original function
     def collate_fn(self, batch: list) -> dict:
         """
         Collate function for creating batches.
@@ -223,3 +273,41 @@ class HMDB51Dataset(Dataset):
             labels=torch.tensor(unbatched_labels), # (K,)
             paths=paths  # no need to make it a tensor
         )
+
+    # ? Modified function
+    # def collate_fn(self, batch: list) -> dict:
+    #     """
+    #     Collate function for creating batches.
+
+    #     Args:
+    #         batch (list): List of samples.
+
+    #     Returns:
+    #         dict: Dictionary containing batched clips, labels, and paths.
+    #     """
+    #     # Unpack the batch. Each element in `batch` is (clips_tensor, label, video_path)
+    #     # with `clips_tensor` being of shape (num_clips_per_video, clip_length, C, H, W).
+    #     batched_clips, batched_labels, paths = [], [], []
+
+    #     for clips_tensor, label, video_path in batch:
+    #         # clips_tensor is (num_clips_per_video, clip_length, C, H, W)
+    #         # We will transform each clip individually and then stack them.
+    #         for clip in clips_tensor:
+    #             transformed_clip = self.transform(clip).permute(1, 0, 2, 3)
+    #             batched_clips.append(transformed_clip.unsqueeze(0))  # Add batch dim
+    #         batched_labels.extend([label] * len(clips_tensor))  # Repeat label for each clip
+    #         paths.extend([video_path] * len(clips_tensor))  # Repeat path for each clip
+
+    #     # Concatenate all the clips along the batch dimension
+    #     # (num_videos * num_clips_per_video, C, T, H, W)
+    #     batched_clips = torch.cat(batched_clips, dim=0)
+
+    #     # Convert labels to tensor
+    #     # (num_videos * num_clips_per_video,)
+    #     batched_labels = torch.tensor(batched_labels, dtype=torch.long)
+
+    #     return dict(
+    #         clips=batched_clips,
+    #         labels=batched_labels,
+    #         paths=paths
+    #     )
