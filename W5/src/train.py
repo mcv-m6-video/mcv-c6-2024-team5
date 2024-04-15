@@ -106,10 +106,20 @@ def evaluate(
 
     for batch in pbar:
         # Gather batch and move to device
-        clips, labels = batch['clips'].to(device), batch['labels'].to(device)
+        # batched clips is (num_videos, num_clips_per_video, C, T, H, W)
+        # Labels is (num_videos * num_clips_per_video)
+        batched_clips, labels = batch['clips'], batch['labels'].to(device)
+        
         # Forward pass
         with torch.no_grad():
-            outputs = model(clips)
+            outputs = []
+            for clips in batched_clips:
+                clips = clips.to(device)
+                outputs.append(model(clips))
+            
+            # Aggregate outputs from all clips
+            outputs = torch.stack(outputs, dim=0).mean(dim=0)
+            
             # Compute loss (just for logging, not used for backpropagation)
             loss = loss_fn(outputs, labels)
             # Compute metrics
@@ -317,7 +327,7 @@ if __name__ == "__main__":
                         help='Load a model from a file')
     parser.add_argument('--only-inference', action='store_true', default=False,
                         help='Only perform inference on the test set (requires a model [--load-model] to load)')
-    parser.add_argument('--clips-per-video', type=int, default=1,
+    parser.add_argument('--clips-per-video', type=int, default=3,
                         help='Number of clips to sample per video')
     parser.add_argument('--crops-per-clip', type=int, default=1,
                         help='Number of spatial crops to sample per clip')
