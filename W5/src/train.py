@@ -311,9 +311,9 @@ if __name__ == "__main__":
                         help='Load a model from a file')
     parser.add_argument('--only-inference', action='store_true', default=False,
                         help='Only perform inference on the test set (requires a model [--load-model] to load)')
-    parser.add_argument('--views-per-video', type=int, default=1,
+    parser.add_argument('--clips-per-video', type=int, default=1,
                         help='Number of clips to sample per video')
-    parser.add_argument('--crops-per-view', type=int, default=1,
+    parser.add_argument('--crops-per-clips', type=int, default=1,
                         help='Number of spatial crops to sample per clip')
     
 
@@ -327,8 +327,8 @@ if __name__ == "__main__":
         clip_length=args.clip_length,
         crop_size=args.crop_size,
         temporal_stride=args.temporal_stride,
-        views_per_video=args.views_per_video,
-        crops_per_view=args.crops_per_view
+        clips_per_video=args.clips_per_video,
+        crops_per_clip=args.crops_per_clip
     )
 
     # Create data loaders

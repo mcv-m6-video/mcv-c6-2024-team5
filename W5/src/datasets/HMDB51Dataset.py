@@ -55,8 +55,8 @@ class HMDB51Dataset(Dataset):
         clip_length: int, 
         crop_size: int, 
         temporal_stride: int,
-        views_per_video: int,
-        crops_per_view: int
+        clips_per_video: int,
+        crops_per_clip: int
     ) -> None:
         """
         Initialize HMDB51 dataset.
@@ -70,6 +70,8 @@ class HMDB51Dataset(Dataset):
             clip_length (int): Number of frames of the clips.
             crop_size (int): Size of spatial crops (squares).
             temporal_stride (int): Receptive field of the model will be (clip_length * temporal_stride) / FPS.
+            clips_per_video (int): Number of clips to sample from each video.
+            crops_per_clip (int): Number of crops to sample from each clip.
         """
         self.videos_dir = videos_dir
         self.annotations_dir = annotations_dir
@@ -78,8 +80,8 @@ class HMDB51Dataset(Dataset):
         self.clip_length = clip_length
         self.crop_size = crop_size
         self.temporal_stride = temporal_stride
-        self.views_per_video = views_per_video
-        self.crops_per_view = crops_per_view
+        self.clips_per_video = clips_per_video
+        self.crops_per_clip = crops_per_clip
 
         self.annotation = self._read_annotation()
         self.transform = self._create_transform()
