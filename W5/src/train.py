@@ -340,7 +340,7 @@ if __name__ == "__main__":
     model = model.to(args.device)
 
     if args.load_model:
-        model.load_state_dict(torch.load(args.load_model))
+        model.load_state_dict(torch.load(args.load_model, map_location=args.device))
 
     model_name = args.model_name + "_hmdb51"
 
