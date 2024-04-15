@@ -305,7 +305,10 @@ if __name__ == "__main__":
                         help='Device to use for training (cuda or cpu)')
     parser.add_argument('--early-stopping', type=int, default=5,
                         help='Number of epochs to wait after last time validation loss improved')
-    parser.add_argument('--wandb', action='store_true', default=False, help='Use Weights & Biases for logging')
+    parser.add_argument('--wandb', action='store_true', default=False, 
+                        help='Use Weights & Biases for logging')
+    parser.add_argument('--load-model', type=str, default=None,
+                        help='Load a model from a file (for testing purposes)')
 
     args = parser.parse_args()
 
@@ -335,6 +338,9 @@ if __name__ == "__main__":
     num_params, num_FLOPs = print_model_summary(model, args.clip_length, args.crop_size)
 
     model = model.to(args.device)
+
+    if args.load_model:
+        model.load_state_dict(torch.load(args.load_model))
 
     model_name = args.model_name + "_hmdb51"
 
