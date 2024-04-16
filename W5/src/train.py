@@ -115,10 +115,12 @@ def evaluate(
             outputs = []
             for clips in batched_clips:
                 clips = clips.to(device)
-                outputs.append(model(clips))
-            
-            # Aggregate outputs from all clips
-            outputs = torch.stack(outputs, dim=0).mean(dim=0)
+                out = model(clips)
+                # Do the mean of the outputs of the clips, to get the final output (aggregation)
+                out = out.mean(dim=0)
+                outputs.append(out)
+
+            outputs = torch.stack(outputs, dim=0)
             
             # Compute loss (just for logging, not used for backpropagation)
             loss = loss_fn(outputs, labels)

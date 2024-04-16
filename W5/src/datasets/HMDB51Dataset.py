@@ -297,15 +297,18 @@ class HMDB51Dataset(Dataset):
         for clips_tensor, label, video_path in batch:
             # clips_tensor is (num_clips_per_video, clip_length, C, H, W)
             # We will transform each clip individually and then stack them.
+            clips = []
             for clip in clips_tensor:
                 transformed_clip = self.transform(clip).permute(1, 0, 2, 3)
-                batched_clips.append(transformed_clip.unsqueeze(0))  # Add batch dim
-            batched_labels.extend([label] * len(clips_tensor))  # Repeat label for each clip
-            paths.extend([video_path] * len(clips_tensor))  # Repeat path for each clip
+                clips.append(transformed_clip.unsqueeze(0))
+            clips = torch.cat(clips, dim=0)
+            batched_clips.extend([clips.unsqueeze(0)])  # Add to the list of clips
+            batched_labels.extend([label])  # Repeat label for each clip
+            paths.extend([video_path])  # Repeat path for each clip
 
         # Concatenate all the clips along the batch dimension
         # (num_videos * num_clips_per_video, C, T, H, W)
-        # batched_clips = torch.cat(batched_clips, dim=0)
+        batched_clips = torch.cat(batched_clips, dim=0)
 
         # Convert labels to tensor
         # (num_videos * num_clips_per_video,)
