@@ -85,7 +85,32 @@ class HMDB51Dataset(Dataset):
         self.crops_per_clip = crops_per_clip
 
         self.annotation = self._read_annotation()
+        self.CENTER_LEFT_TRANSFORM = self._standardized_crop(v2.Lambda(
+            lambda img: v2.functional.crop(img, img.shape[1] // 2 - self.crop_size // 2, 0, self.crop_size,
+                                           self.crop_size)))
+        self.CENTER_RIGHT_TRANSFORM = self._standardized_crop(v2.Lambda(
+            lambda img: v2.functional.crop(img, img.shape[1] // 2 - self.crop_size // 2, img.shape[2] - self.crop_size,
+                                           self.crop_size, self.crop_size)))
+        self.CENTER_CENTER_TRANSFORM = self._standardized_crop(v2.CenterCrop(self.crop_size))
+        self.TOP_LEFT_TRANSFORM = self._standardized_crop(
+            v2.Lambda(lambda img: v2.functional.crop(img, 0, 0, self.crop_size, self.crop_size)))
+        self.TOP_RIGHT_TRANSFORM = self._standardized_crop(v2.Lambda(
+            lambda img: v2.functional.crop(img, 0, img.shape[2] - self.crop_size, self.crop_size, self.crop_size)))
+        self.BOTTOM_LEFT_TRANSFORM = self._standardized_crop(v2.Lambda(
+            lambda img: v2.functional.crop(img, img.shape[1] - self.crop_size, 0, self.crop_size, self.crop_size)))
+        self.BOTTOM_RIGHT_TRANSFORM = self._standardized_crop(v2.Lambda(
+            lambda img: v2.functional.crop(img, img.shape[1] - self.crop_size, img.shape[2] - self.crop_size,
+                                           self.crop_size, self.crop_size)))
+        
         self.transform = self._create_transform()
+
+    def _standardized_crop(self, transform):
+        return v2.Compose([
+            v2.Resize(self.crop_size), # Shortest side of the frame to be resized to the given size
+            transform,
+            v2.ToDtype(torch.float32, scale=True),
+            v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        ])
 
 
     def _read_annotation(self) -> pd.DataFrame:
@@ -112,7 +137,7 @@ class HMDB51Dataset(Dataset):
         return pd.concat(annotation, ignore_index=True)
 
 
-    def _create_transform(self) -> v2.Compose:
+    def _create_transform(self) -> [v2.Compose]:
         """
         Create transform based on the dataset regime.
 
@@ -120,20 +145,26 @@ class HMDB51Dataset(Dataset):
             v2.Compose: Transform for the dataset.
         """
         if self.regime == HMDB51Dataset.Regime.TRAINING:
-            return v2.Compose([
+            return [v2.Compose([
                 v2.RandomResizedCrop(self.crop_size),
                 v2.RandomHorizontalFlip(p=0.5),
                 v2.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4),
                 v2.ToDtype(torch.float32, scale=True),
                 v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-            ])
+            ])]
         else:
-            return v2.Compose([
-                v2.Resize(self.crop_size), # Shortest side of the frame to be resized to the given size
-                v2.CenterCrop(self.crop_size),
-                v2.ToDtype(torch.float32, scale=True),
-                v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-            ])
+            t = []
+            if self.crops_per_clip == 0 or self.crops_per_clip == 1 or self.crops_per_clip == 3 or self.crops_per_clip == 5:
+                t.append(self.CENTER_CENTER_TRANSFORM)
+            if self.crops_per_clip == 2 or self.crops_per_clip == 3:
+                t.append(self.CENTER_LEFT_TRANSFORM)
+                t.append(self.CENTER_RIGHT_TRANSFORM)
+            if self.crops_per_clip == 4 or self.crops_per_clip == 5:
+                t.append(self.TOP_LEFT_TRANSFORM)
+                t.append(self.TOP_RIGHT_TRANSFORM)
+                t.append(self.BOTTOM_LEFT_TRANSFORM)
+                t.append(self.BOTTOM_RIGHT_TRANSFORM)
+            return t
 
 
     def get_num_classes(self) -> int:
@@ -299,8 +330,9 @@ class HMDB51Dataset(Dataset):
             # We will transform each clip individually and then stack them.
             clips = []
             for clip in clips_tensor:
-                transformed_clip = self.transform(clip).permute(1, 0, 2, 3)
-                clips.append(transformed_clip.unsqueeze(0))
+                for transform in self.transform:
+                    transformed_clip = transform(clip).permute(1, 0, 2, 3)
+                    clips.append(transformed_clip.unsqueeze(0))
             clips = torch.cat(clips, dim=0)
             batched_clips.extend([clips.unsqueeze(0)])  # Add to the list of clips
             batched_labels.extend([label])  # Repeat label for each clip
