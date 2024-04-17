@@ -48,10 +48,15 @@ def train(
     hits = count = 0 # auxiliary variables for computing accuracy
     for batch in pbar:
         # Gather batch and move to device
-        clips, labels = batch['clips'].to(device), batch['labels'].to(device)
-        # Forward pass
-        outputs = model(clips)
+        batch_clips, labels = batch['clips'], batch['labels'].to(device)
         # Compute loss
+        clips_per_video = 1
+        if batch_clips.dim() == 6:
+            clips_per_video = batch_clips.size(1)
+            batch_clips = batch_clips.view(-1, *batch_clips.size()[2:])
+        outputs = model(batch_clips.to(device))
+        if clips_per_video > 1:
+            outputs = outputs.view(-1, clips_per_video, outputs.size(1)).mean(dim=1)
         loss = loss_fn(outputs, labels)
         # Backward pass
         loss.backward()
@@ -108,20 +113,18 @@ def evaluate(
         # Gather batch and move to device
         # batched clips is (num_videos, num_clips_per_video, C, T, H, W)
         # Labels is (num_videos * num_clips_per_video)
-        batched_clips, labels = batch['clips'], batch['labels'].to(device)
+        batch_clips, labels = batch['clips'], batch['labels'].to(device)
         
         # Forward pass
         with torch.no_grad():
-            outputs = []
-            for clips in batched_clips:
-                clips = clips.to(device)
-                out = model(clips)
-                # Do the mean of the outputs of the clips, to get the final output (aggregation)
-                out = out.mean(dim=0)
-                outputs.append(out)
-
-            outputs = torch.stack(outputs, dim=0)
-            
+            # outputs = torch.stack(outputs, dim=0)
+            clips_per_video = 1
+            if batch_clips.dim() == 6:
+                clips_per_video = batch_clips.size(1)
+                batch_clips = batch_clips.view(-1, *batch_clips.size()[2:])
+            outputs = model(batch_clips.to(device))
+            if clips_per_video > 1:
+                outputs = outputs.view(-1, clips_per_video, outputs.size(1)).mean(dim=1)
             # Compute loss (just for logging, not used for backpropagation)
             loss = loss_fn(outputs, labels)
             # Compute metrics
@@ -163,7 +166,8 @@ def create_datasets(
         crop_size: int,
         temporal_stride: int,
         clips_per_video: int,
-        crops_per_clip: int
+        crops_per_clip: int,
+        tsn_k: int
 ) -> Dict[str, HMDB51Dataset]:
     """
     Creates datasets for training, validation, and testing.
@@ -177,6 +181,7 @@ def create_datasets(
         temporal_stride (int): Receptive field of the model will be (clip_length * temporal_stride) / FPS.
         clips_per_video (int): Number of clips to sample from each video.
         crops_per_clip (int): Number of crops to sample from each clip.
+        tsn_k  (int): Number of clips to sample per video for TSN aggregation
 
     Returns:
         Dict[str, HMDB51Dataset]: A dictionary containing the datasets for training, validation, and testing.
@@ -192,7 +197,8 @@ def create_datasets(
             crop_size,
             temporal_stride,
             clips_per_video,
-            crops_per_clip
+            crops_per_clip,
+            tsn_k
         )
 
     return datasets
@@ -333,6 +339,8 @@ if __name__ == "__main__":
                         help='Number of clips to sample per video')
     parser.add_argument('--crops-per-clip', type=int, default=1,
                         help='Number of spatial crops to sample per clip')
+    parser.add_argument('--tsn-k', type=int, default=3,
+                        help='Number of clips to sample per video for TSN aggregation')
     
 
     args = parser.parse_args()
@@ -346,7 +354,8 @@ if __name__ == "__main__":
         crop_size=args.crop_size,
         temporal_stride=args.temporal_stride,
         clips_per_video=args.clips_per_video,
-        crops_per_clip=args.crops_per_clip
+        crops_per_clip=args.crops_per_clip,
+        tsn_k=args.tsn_k
     )
 
     # Create data loaders
@@ -368,8 +377,9 @@ if __name__ == "__main__":
 
     if args.load_model:
         model.load_state_dict(torch.load(args.load_model, map_location=args.device))
-
-    model_name = args.model_name + "_hmdb51"
+        model_name = args.load_model.split("/")[-1].split(".")[0]
+    else:
+        model_name = args.model_name + "_hmdb51"
 
     if args.wandb:
         config = vars(args)
@@ -384,7 +394,10 @@ if __name__ == "__main__":
         if not args.load_model:
             raise ValueError("Please provide a model to load for inference")
         test_acc_mean, test_loss_mean, acc_per_class = evaluate(model, loaders['testing'], loss_fn, args.device, description=f"Testing", compute_per_class_acc=True)
-        print(f"Test accuracy: {test_acc_mean}, Test loss: {test_loss_mean}")
+        # Save image of accuracy per class
+        save_path = f"results/{model_name}"
+        plt = visualization.plot_acc_per_class(acc_per_class, save_path=save_path + "/acc_per_class.png")
+        print(f"Clips_per_video =  {args.clips_per_video}, Crops_per_clip = {args.crops_per_clip}. Results: Test accuracy: {test_acc_mean}, Test loss: {test_loss_mean}")
         print(acc_per_class)
         exit()
 

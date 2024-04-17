@@ -57,7 +57,8 @@ class HMDB51Dataset(Dataset):
         crop_size: int, 
         temporal_stride: int,
         clips_per_video: int,
-        crops_per_clip: int
+        crops_per_clip: int,
+        tsn_k: int = 1,
     ) -> None:
         """
         Initialize HMDB51 dataset.
@@ -103,6 +104,14 @@ class HMDB51Dataset(Dataset):
                                            self.crop_size, self.crop_size)))
         
         self.transform = self._create_transform()
+        self.tsn_k = tsn_k
+        if self.tsn_k > 1:
+            self.clips_per_video = 1
+
+        if self.regime == HMDB51Dataset.Regime.TRAINING:
+            self.deterministic = False
+        else:
+            self.deterministic = False
 
     def _standardized_crop(self, transform):
         return v2.Compose([
@@ -229,6 +238,42 @@ class HMDB51Dataset(Dataset):
 
     #     return video, label, video_path
 
+    def _get_segments(self, frame_paths, video_len):
+        clips = []
+        if video_len >= self.clip_length * self.temporal_stride:
+            # Calculate the indices for starting frames for evenly spaced clips
+            max_start_index =  video_len - self.clip_length * self.temporal_stride
+            if self.deterministic:
+                clip_starts = np.linspace(0, max_start_index, self.clips_per_video, dtype=int, endpoint=False)
+            else:
+                if max_start_index > 0:
+                    clip_starts = np.random.randint(0, max_start_index, self.clips_per_video)
+                else:
+                    clip_starts = [0] * self.clips_per_video
+
+            # Collect the clips
+            for start in clip_starts:
+                clip_frames = [read_image(frame_paths[start + i * self.temporal_stride]) for i in range(self.clip_length)]
+                clip = torch.stack(clip_frames)
+                clips.append(clip)
+        else:
+            # If not enough frames for desired number of clips, repeat the available frames
+            repetition_factor = (self.clips_per_video * self.clip_length * self.temporal_stride + video_len - 1) // video_len
+            repeated_frame_paths = frame_paths * repetition_factor
+
+            clips = []
+            for i in range(self.clips_per_video):
+                real_i = i
+                if not self.deterministic:
+                    real_i = random.randint(0, video_len)
+                clip_frames = []
+                for j in range(self.clip_length):
+                    frame_idx = (real_i * self.clip_length + j) * self.temporal_stride % len(repeated_frame_paths)
+                    frame = read_image(repeated_frame_paths[frame_idx])  # Read the frame image
+                    clip_frames.append(frame)
+                clips.append(torch.stack(clip_frames))  # Stack the frames to form a clip tensor
+        return clips
+
     # ? Modified function
     def __getitem__(self, idx: int) -> tuple:
         """
@@ -250,30 +295,15 @@ class HMDB51Dataset(Dataset):
         frame_paths = sorted(glob(os.path.join(escape(video_path), "*.jpg")))  # get sorted frame paths
         video_len = len(frame_paths)
 
-        clips = []
-        if video_len >= self.clip_length * self.temporal_stride:
-            # Calculate the indices for starting frames for evenly spaced clips
-            max_start_index = video_len - self.clip_length * self.temporal_stride
-            clip_starts = np.linspace(0, max_start_index, self.clips_per_video, dtype=int, endpoint=False)
-
-            # Collect the clips
-            for start in clip_starts:
-                clip_frames = [read_image(frame_paths[start + i * self.temporal_stride]) for i in range(self.clip_length)]
-                clip = torch.stack(clip_frames)
-                clips.append(clip)
+        if self.tsn_k < 2:
+            clips = self._get_segments(frame_paths, video_len)
         else:
-            # If not enough frames for desired number of clips, repeat the available frames
-            repetition_factor = (self.clips_per_video * self.clip_length * self.temporal_stride + video_len - 1) // video_len
-            repeated_frame_paths = frame_paths * repetition_factor
-
+            real_video_len = video_len // self.tsn_k
             clips = []
-            for i in range(self.clips_per_video):
-                clip_frames = []
-                for j in range(self.clip_length):
-                    frame_idx = (i * self.clip_length + j) * self.temporal_stride % len(repeated_frame_paths)
-                    frame = read_image(repeated_frame_paths[frame_idx])  # Read the frame image
-                    clip_frames.append(frame)
-                clips.append(torch.stack(clip_frames))  # Stack the frames to form a clip tensor
+            for offset in range(self.tsn_k):
+                f_paths = frame_paths[offset * real_video_len: (offset + 1) * real_video_len]
+                clips.extend(self._get_segments(f_paths, real_video_len))
+
 
         # Stack all clips along the first dimension to get a tensor of shape (num_clips, clip_length, C, H, W)
         clips_tensor = torch.stack(clips, dim=0)
@@ -294,13 +324,13 @@ class HMDB51Dataset(Dataset):
     #     Returns:
     #         dict: Dictionary containing batched clips, labels, and paths.
     #     """
-    #     # [(clip1, label1, path1), (clip2, label2, path2), ...] 
+    #     # [(clip1, label1, path1), (clip2, label2, path2), ...]
     #     #   -> ([clip1, clip2, ...], [label1, label2, ...], [path1, path2, ...])
     #     unbatched_clips, unbatched_labels, paths = zip(*batch)
  
     #     # Apply transformation and permute dimensions: (T, C, H, W) -> (C, T, H, W)
     #     transformed_clips = [self.transform(clip).permute(1, 0, 2, 3) for clip in unbatched_clips]
-    #     # Concatenate clips along the batch dimension: 
+    #     # Concatenate clips along the batch dimension:
     #     # B * [(C, T, H, W)] -> B * [(1, C, T, H, W)] -> (B, C, T, H, W)
     #     batched_clips = torch.cat([d.unsqueeze(0) for d in transformed_clips], dim=0)
 
