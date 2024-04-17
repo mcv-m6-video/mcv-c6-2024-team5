@@ -77,65 +77,95 @@ Then, just take into account that HMDB51 was thought to be evaluated in 3-fold c
 
 ## Run the baseline code
 
-0. You'll also need to install the required Python dependencies. These are in the `requirements.txt` file. Assuming you are using PIP, you can then just run:
+### Prerequisites
+
+Before running the script, you need to install the required Python dependencies listed in the `requirements.txt` file. To install these dependencies using PIP, execute:
 
     ```bash
     $ pip3 install -r requirements.txt
     ```
 
-1. Finally, the baseline can be run executing the `src/train.py` script, which expects one positional argument (the directory containing the frames that we've created before), but accepts other multiple arguments:
+### Usage
+
+Finally, the model can be run by executing `src/train.py` script, which expects one positional argument (the directory containing the frames that we've created before), but accepts other multiple arguments:
 
     ```
     $ python3 src/train.py --help
-        usage: train.py [-h] [--annotations-dir ANNOTATIONS_DIR]
-                        [--clip-length CLIP_LENGTH] [--crop-size CROP_SIZE]
-                        [--temporal-subsampling TEMPORAL_SUBSAMPLING]
-                        [--model-name MODEL_NAME] [--load-pretrain]
-                        [--optimizer-name OPTIMIZER_NAME] [--lr LR] [--epochs EPOCHS]
-                        [--batch-size BATCH_SIZE] [--batch-size-eval BATCH_SIZE_EVAL]
-                        [--validate-every VALIDATE_EVERY] [--num-workers NUM_WORKERS]
-                        [--device DEVICE]
-                        frames-dir
+        usage: train.py [-h] [--annotations-dir ANNOTATIONS_DIR] [--clip-length CLIP_LENGTH]
+                [--crop-size CROP_SIZE] [--temporal-stride TEMPORAL_STRIDE]
+                [--model-name MODEL_NAME] [--load-pretrain] [--optimizer-name OPTIMIZER_NAME]
+                [--lr LR] [--epochs EPOCHS] [--batch-size BATCH_SIZE]
+                [--batch-size-eval BATCH_SIZE_EVAL] [--validate-every VALIDATE_EVERY]
+                [--num-workers NUM_WORKERS] [--device DEVICE] [--early-stopping EARLY_STOPPING]
+                [--wandb] [--load-model LOAD_MODEL] [--only-inference]
+                [--clips-per-video CLIPS_PER_VIDEO] [--crops-per-clip CROPS_PER_CLIP]
+                [--tsn-k TSN_K]
+                frames-dir
 
-        Train a video classification model on HMDB51 dataset.
+    Train a video classification model on HMDB51 dataset.
 
-        positional arguments:
-        frames_dir            Directory containing video files
+    positional arguments:
+    frames_dir              Directory containing video files
 
-        options:
-        -h, --help            show this help message and exit
-        --annotations-dir ANNOTATIONS_DIR
-                                Directory containing annotation files
-        --clip-length CLIP_LENGTH
-                                Number of frames of the clips
-        --crop-size CROP_SIZE
-                                Size of spatial crops (squares)
-        --temporal-subsampling TEMPORAL_SUBSAMPLING
-                                Receptive field of the model will be (clip_length *
-                                temporal_subsampling) / FPS
-        --model-name MODEL_NAME
-                                Model name as defined in models/model_creator.py
-        --load-pretrain       Load pretrained weights for the model (if available)
-        --optimizer-name OPTIMIZER_NAME
-                                Optimizer name (supported: "adam" and "sgd" for now)
-        --lr LR               Learning rate
-        --epochs EPOCHS       Number of epochs
-        --batch-size BATCH_SIZE
-                                Batch size for the training data loader
-        --batch-size-eval BATCH_SIZE_EVAL
-                                Batch size for the evaluation data loader
-        --validate-every VALIDATE_EVERY
-                                Number of epochs after which to validate the model
-        --num-workers NUM_WORKERS
-                                Number of worker processes for data loading
-        --device DEVICE       Device to use for training (cuda or cpu)
+    options:
+    -h, --help              Show this help message and exit
+    --annotations-dir ANNOTATIONS_DIR
+                            Directory containing annotation files (default: data/hmdb51/testTrainMulti_601030_splits)
+    --clip-length CLIP_LENGTH
+                            Number of frames of the clips (default: 4)
+    --crop-size CROP_SIZE
+                            Size of spatial crops (squares) (default: 182)
+    --temporal-stride TEMPORAL_STRIDE
+                            Temporal stride to adjust the receptive field (default: 12)
+    --model-name MODEL_NAME
+                            Model name as defined in models/model_creator.py (default: x3d_xs)
+    --load-pretrain         Load pretrained weights for the model (if available)
+    --optimizer-name OPTIMIZER_NAME
+                            Optimizer name (supported: "adam" and "sgd" for now) (default: adam)
+    --lr LR                 Learning rate (default: 1e-4)
+    --epochs EPOCHS         Number of epochs (default: 50)
+    --batch-size BATCH_SIZE
+                            Batch size for the training data loader (default: 16)
+    --batch-size-eval BATCH_SIZE_EVAL
+                            Batch size for the evaluation data loader (default: 16)
+    --validate-every VALIDATE_EVERY
+                            Number of epochs after which to validate the model (default: 1)
+    --num-workers NUM_WORKERS
+                            Number of worker processes for data loading (default: 2)
+    --device DEVICE         Device to use for training (cuda or cpu) (default: cuda)
+    --early-stopping EARLY_STOPPING
+                            Number of epochs to wait after last time validation loss improved (default: 5)
+    --wandb                 Use Weights & Biases for logging
+    --load-model LOAD_MODEL
+                            Load a model from a file (default: None)
+    --only-inference        Only perform inference on the test set (requires a model to load)
+    --clips-per-video CLIPS_PER_VIDEO
+                            Number of clips to sample per video (default: 3)
+    --crops-per-clip CROPS_PER_CLIP
+                            Number of spatial crops to sample per clip (default: 1)
+    --tsn-k TSN_K
+                            Number of clips to sample per video for TSN aggregation (default: 3)
+
     ```
+
+### Example runs
 
 If not specified, default values should allow you to run the script without issues.
 
-Check the implementation to understand the different parts of the code.
+#### Training with defaults
 
-Example run:
 ```bash
-$ python .\src\train.py --load-model weights/baseline_run_weights.pth  data/frames
-```	
+$ python src/train.py data/frames
+```
+
+#### Using a specific model and enabling Weights & Biases logging:
+
+```bash
+$ python src/train.py --model-name x3d_m --wandb data/frames
+```
+
+#### Performing inference only
+
+```bash
+$ python src/train.py --only-inference --load-model model.pth data/frames
+```
