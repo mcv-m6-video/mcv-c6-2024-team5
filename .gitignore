@@ -6,6 +6,7 @@ W4/data
 W4/data_original
 W5/data
 W6/data
+W6/wandb
 
 # .pt files
 *.pt

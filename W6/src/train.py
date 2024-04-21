@@ -389,7 +389,7 @@ if __name__ == "__main__":
         config = vars(args)
         config['num_params_M'] = num_params
         config['num_GFLOPs'] = num_FLOPs
-        wandb.init(project="ActionClassificationTask-W5", entity="mcv-c6-2024-team5",
+        wandb.init(project="ActionClassificationTask-W6", entity="mcv-c6-2024-team5",
                    config=config)
         wandb.watch(model)
         model_name = wandb.run.name + "_hmdb51"
