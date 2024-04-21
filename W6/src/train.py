@@ -345,7 +345,6 @@ if __name__ == "__main__":
                         help='Number of clips to sample per video for TSN aggregation')
     parser.add_argument('--deterministic', action='store_true', default=False,
                         help='Use our deterministic method, TSN by default if this flag is not set')
-    
 
     args = parser.parse_args()
 

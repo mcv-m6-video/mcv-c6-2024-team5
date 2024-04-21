@@ -109,7 +109,7 @@ class HMDB51Dataset(Dataset):
                                            self.crop_size, self.crop_size)))
         
         self.transform = self._create_transform()
-        if self.tsn_k > 1:
+        if not self.deterministic and self.tsn_k > 1:
             self.clips_per_video = 1
 
     def _standardized_crop(self, transform):
