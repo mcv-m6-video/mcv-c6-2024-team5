@@ -99,7 +99,7 @@ $ python3 src/train.py --help
             [--num-workers NUM_WORKERS] [--device DEVICE] [--early-stopping EARLY_STOPPING]
             [--wandb] [--load-model LOAD_MODEL] [--only-inference]
             [--clips-per-video CLIPS_PER_VIDEO] [--crops-per-clip CROPS_PER_CLIP]
-            [--tsn-k TSN_K]
+            [--tsn-k TSN_K] [--deterministic]
             frames-dir
 
 Train a video classification model on HMDB51 dataset.
@@ -145,7 +145,7 @@ options:
                         Number of spatial crops to sample per clip (default: 1)
 --tsn-k TSN_K
                         Number of clips to sample per video for TSN aggregation (default: 3)
-
+--deterministic         Use our deterministic method, TSN by default if this flag is not set.
 ```
 
 ### Example runs
@@ -155,7 +155,7 @@ If not specified, default values should allow you to run the script without issu
 #### Training with defaults
 
 ```bash
-$ python src/train.py data/frames
+$ python src/train.py --load-pretrain --wandb data/frames
 ```
 
 #### Using a specific model and enabling Weights & Biases logging:
