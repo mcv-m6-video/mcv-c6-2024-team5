@@ -319,9 +319,9 @@ if __name__ == "__main__":
                         help='Learning rate')
     parser.add_argument('--epochs', type=int, default=50,
                         help='Number of epochs')
-    parser.add_argument('--batch-size', type=int, default=16,
+    parser.add_argument('--batch-size', type=int, default=8,
                         help='Batch size for the training data loader')
-    parser.add_argument('--batch-size-eval', type=int, default=16,
+    parser.add_argument('--batch-size-eval', type=int, default=8,
                         help='Batch size for the evaluation data loader')
     parser.add_argument('--validate-every', type=int, default=1,
                         help='Number of epochs after which to validate the model')
@@ -341,7 +341,7 @@ if __name__ == "__main__":
                         help='Number of clips to sample per video')
     parser.add_argument('--crops-per-clip', type=int, default=1,
                         help='Number of spatial crops to sample per clip')
-    parser.add_argument('--tsn-k', type=int, default=3,
+    parser.add_argument('--tsn-k', type=int, default=5,
                         help='Number of clips to sample per video for TSN aggregation')
     parser.add_argument('--deterministic', action='store_true', default=False,
                         help='Use our deterministic method, TSN by default if this flag is not set')
