@@ -4,8 +4,8 @@ import torch
 import torch.nn as nn
 import torchvision
 
-# from movinets import MoViNet
-# from movinets.config import _C
+from movinets import MoViNet
+from movinets.config import _C
 
 def create(model_name: str, load_pretrain: bool, num_classes: int) -> nn.Module:
     if model_name == 'x3d_xs':
@@ -13,8 +13,8 @@ def create(model_name: str, load_pretrain: bool, num_classes: int) -> nn.Module:
     
     # ? Smaller or equal models
 
-    # elif model_name == 'movinet_a0_stream':
-    #     return create_movinet_a0_stream(load_pretrain, num_classes)
+    elif model_name == 'movinet_a0':
+        return create_movinet_a0(load_pretrain, num_classes)
 
     elif model_name == 'mobilenetV3_small':
         return create_mobilenetV3_small(load_pretrain, num_classes)
@@ -41,10 +41,15 @@ def create_x3d_xs(load_pretrain, num_classes):
         nn.Linear(2048, num_classes, bias=True),
     )
 
-# def create_movinet_a0_stream(load_pretrain, num_classes):
-#     # load movinet A0 Stream
-#     model = MoViNet(_C.MODEL.MoViNetA0,pretrained = True)
-#     return model
+def create_movinet_a0(load_pretrain, num_classes):
+    # load movinet A0
+    model = MoViNet(_C.MODEL.MoViNetA0, causal=True, pretrained=load_pretrain)
+    model.classifier[3] = torch.nn.Conv3d(2048, num_classes, (1,1,1))
+    return model
+    # return nn.Sequential(
+    #     model,
+    #     nn.Linear(600, num_classes, bias=True),
+    # )
 
 def create_mobilenetV3_small(load_pretrain, num_classes):
     model = torchvision.models.mobilenet_v3_small(pretrained=load_pretrain)

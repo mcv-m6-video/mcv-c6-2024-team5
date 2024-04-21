@@ -57,7 +57,8 @@ class HMDB51Dataset(Dataset):
         clips_per_video: int,
         crops_per_clip: int,
         tsn_k: int,
-        deterministic: bool
+        deterministic: bool,
+        model_name: str
     ) -> None:
         """
         Initialize HMDB51 dataset.
@@ -87,6 +88,7 @@ class HMDB51Dataset(Dataset):
         self.crops_per_clip = crops_per_clip
         self.tsn_k = tsn_k
         self.deterministic = deterministic
+        self.model_name = model_name
 
         self.annotation = self._read_annotation()
         self.transform = self._create_transform()
@@ -161,13 +163,23 @@ class HMDB51Dataset(Dataset):
             v2.Compose: Transform for the dataset.
         """
         if self.regime == HMDB51Dataset.Regime.TRAINING:
-            return [v2.Compose([
-                v2.RandomResizedCrop(self.crop_size),
-                v2.RandomHorizontalFlip(p=0.5),
-                # v2.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4),
-                v2.ToDtype(torch.float32, scale=True),
-                v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-            ])]
+            if self.model_name == 'x3d_xs':
+                return [v2.Compose([
+                    v2.RandomResizedCrop(self.crop_size),
+                    v2.RandomHorizontalFlip(p=0.5),
+                    # v2.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4),
+                    v2.ToDtype(torch.float32, scale=True),
+                    v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+                ])]
+            elif self.model_name == "movinet_a0":
+                return [v2.Compose([
+                    # Transform to float32 and normalize between 0 and 1
+                    v2.ToDtype(torch.float32, scale=True),
+                    v2.Resize((200, 200)),
+                    v2.RandomHorizontalFlip(p=0.5),
+                    v2.Normalize(mean=[0.43216, 0.394666, 0.37645], std=[0.22803, 0.22145, 0.216989]),
+                    v2.RandomResizedCrop(self.crop_size),
+                ])]
         else:
             t = []
             if self.crops_per_clip == 0 or self.crops_per_clip == 1 or self.crops_per_clip == 3 or self.crops_per_clip == 5:

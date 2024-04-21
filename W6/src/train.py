@@ -25,6 +25,7 @@ def train(
         optimizer: torch.optim.Optimizer,
         loss_fn: nn.Module,
         device: str,
+        model_name: str = "",
         description: str = ""
     ) -> (float, float):
     """
@@ -55,6 +56,8 @@ def train(
             clips_per_video = batch_clips.size(1)
             batch_clips = batch_clips.view(-1, *batch_clips.size()[2:])
         outputs = model(batch_clips.to(device))
+        if model_name == 'movinet_a0':
+            outputs = nn.functional.log_softmax(outputs, dim=1)
         if clips_per_video > 1:
             outputs = outputs.view(-1, clips_per_video, outputs.size(1)).mean(dim=1)
         loss = loss_fn(outputs, labels)
@@ -84,6 +87,7 @@ def evaluate(
         valid_loader: DataLoader,
         loss_fn: nn.Module,
         device: str,
+        model_name: str = "",
         description: str = "",
         compute_per_class_acc: bool = False
     ) -> (float, float):
@@ -123,6 +127,8 @@ def evaluate(
                 clips_per_video = batch_clips.size(1)
                 batch_clips = batch_clips.view(-1, *batch_clips.size()[2:])
             outputs = model(batch_clips.to(device))
+            if model_name == 'movinet_a0':
+                outputs = nn.functional.log_softmax(outputs, dim=1)
             if clips_per_video > 1:
                 outputs = outputs.view(-1, clips_per_video, outputs.size(1)).mean(dim=1)
             # Compute loss (just for logging, not used for backpropagation)
@@ -168,7 +174,8 @@ def create_datasets(
         clips_per_video: int,
         crops_per_clip: int,
         tsn_k: int,
-        deterministic: bool
+        deterministic: bool,
+        model_name: str
 ) -> Dict[str, HMDB51Dataset]:
     """
     Creates datasets for training, validation, and testing.
@@ -200,7 +207,8 @@ def create_datasets(
             clips_per_video,
             crops_per_clip,
             tsn_k,
-            deterministic
+            deterministic,
+            model_name
         )
 
     return datasets
@@ -316,7 +324,7 @@ if __name__ == "__main__":
     parser.add_argument('--model-name', type=str, default='x3d_xs',
                         help='Model name as defined in models/model_creator.py')
     parser.add_argument('--load-pretrain', action='store_true', default=False,
-                    help='Load pretrained weights for the model (if available)')
+                        help='Load pretrained weights for the model (if available)')
     parser.add_argument('--optimizer-name', type=str, default="adam",
                         help='Optimizer name (supported: "adam" and "sgd" for now)')
     parser.add_argument('--lr', type=float, default=1e-4,
@@ -363,7 +371,8 @@ if __name__ == "__main__":
         clips_per_video=args.clips_per_video,
         crops_per_clip=args.crops_per_clip,
         tsn_k=args.tsn_k,
-        deterministic=args.deterministic
+        deterministic=args.deterministic,
+        model_name=args.model_name
     )
 
     # Create data loaders
@@ -401,7 +410,7 @@ if __name__ == "__main__":
     if args.only_inference:
         if not args.load_model:
             raise ValueError("Please provide a model to load for inference")
-        test_acc_mean, test_loss_mean, acc_per_class = evaluate(model, loaders['testing'], loss_fn, args.device, description=f"Testing", compute_per_class_acc=True)
+        test_acc_mean, test_loss_mean, acc_per_class = evaluate(model, loaders['testing'], loss_fn, args.device, model_name=args.model_name, description=f"Testing", compute_per_class_acc=True)
         # Save image of accuracy per class
         save_path = f"results/{model_name}"
         plt = visualization.plot_acc_per_class(acc_per_class, save_path=save_path + "/acc_per_class.png")
@@ -415,13 +424,13 @@ if __name__ == "__main__":
     for epoch in range(args.epochs):
         # Training
         description = f"Training [Epoch: {epoch+1}/{args.epochs}]"
-        train_acc_mean, train_loss_mean = train(model, loaders['training'], optimizer, loss_fn, args.device, description=description)
+        train_acc_mean, train_loss_mean = train(model, loaders['training'], optimizer, loss_fn, args.device, model_name=args.model_name, description=description)
         if args.wandb:
             wandb.log({"train_acc": train_acc_mean, "train_loss": train_loss_mean}, step=epoch)
         # Validation
         if epoch % args.validate_every == 0:
             description = f"Validation [Epoch: {epoch + 1}/{args.epochs}]"
-            val_acc_mean, val_loss_mean = evaluate(model, loaders['validation'], loss_fn, args.device, description=description)
+            val_acc_mean, val_loss_mean = evaluate(model, loaders['validation'], loss_fn, args.device, model_name=args.model_name, description=description)
             if args.wandb:
                 wandb.log({"val_acc": val_acc_mean, "val_loss": val_loss_mean}, step=epoch)
             early_stopper(val_loss_mean)
@@ -430,7 +439,7 @@ if __name__ == "__main__":
                 break
 
     # Testing
-    test_acc_mean, test_loss_mean, acc_per_class = evaluate(model, loaders['testing'], loss_fn, args.device, description=f"Testing", compute_per_class_acc=True)
+    test_acc_mean, test_loss_mean, acc_per_class = evaluate(model, loaders['testing'], loss_fn, args.device, model_name=args.model_name, description=f"Testing", compute_per_class_acc=True)
 
     # Check if results folder exists
     if not os.path.exists("results"):
