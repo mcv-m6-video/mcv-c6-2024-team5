@@ -11,12 +11,16 @@ def create(model_name: str, load_pretrain: bool, num_classes: int) -> nn.Module:
     if model_name == 'x3d_xs':
         return create_x3d_xs(load_pretrain, num_classes)
     
+    # ? Smaller or equal models
+
     # elif model_name == 'movinet_a0_stream':
     #     return create_movinet_a0_stream(load_pretrain, num_classes)
 
     elif model_name == 'mobilenetV3_small':
         return create_mobilenetV3_small(load_pretrain, num_classes)
     
+    # ? Temporal analysis
+
     elif model_name == 'efficientnet_b0':
         return create_efficientnet_b0(load_pretrain, num_classes)
 

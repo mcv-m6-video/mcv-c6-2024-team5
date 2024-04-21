@@ -263,6 +263,7 @@ def print_model_summary(
         model: nn.Module,
         clip_length: int,
         crop_size: int,
+        model_name: str,
         print_model: bool = True,
         print_params: bool = True,
         print_FLOPs: bool = True
@@ -289,10 +290,13 @@ def print_model_summary(
     if print_params:
         print(f"Number of parameters (M): {num_params}")
 
-    num_FLOPs = model_analysis.calculate_operations(model, clip_length, crop_size, crop_size)
-    num_FLOPs = round(num_FLOPs / 10e9, 2)
-    if print_FLOPs:
-        print(f"Number of FLOPs (G): {num_FLOPs}")
+    if model_name == 'x3d_xs':
+        num_FLOPs = model_analysis.calculate_operations(model, clip_length, crop_size, crop_size)
+        num_FLOPs = round(num_FLOPs / 10e9, 2)
+        if print_FLOPs:
+            print(f"Number of FLOPs (G): {num_FLOPs}")
+    else:
+        num_FLOPs = None
 
     return num_params, num_FLOPs
 
@@ -375,7 +379,7 @@ if __name__ == "__main__":
     optimizer = create_optimizer(args.optimizer_name, model.parameters(), lr=args.lr)
     loss_fn = nn.CrossEntropyLoss()
 
-    num_params, num_FLOPs = print_model_summary(model, args.clip_length, args.crop_size)
+    num_params, num_FLOPs = print_model_summary(model, args.clip_length, args.crop_size, args.model_name)
 
     model = model.to(args.device)
 
