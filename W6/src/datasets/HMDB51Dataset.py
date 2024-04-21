@@ -58,7 +58,8 @@ class HMDB51Dataset(Dataset):
         temporal_stride: int,
         clips_per_video: int,
         crops_per_clip: int,
-        tsn_k: int = 1,
+        tsn_k: int,
+        deterministic: bool
     ) -> None:
         """
         Initialize HMDB51 dataset.
@@ -74,6 +75,8 @@ class HMDB51Dataset(Dataset):
             temporal_stride (int): Receptive field of the model will be (clip_length * temporal_stride) / FPS.
             clips_per_video (int): Number of clips to sample from each video.
             crops_per_clip (int): Number of crops to sample from each clip.
+            tsn_k (int): Number of segments for Temporal Segment Network (TSN).
+            deterministic (bool): Whether to use deterministic sampling (if False, TSN is used)
         """
         self.videos_dir = videos_dir
         self.annotations_dir = annotations_dir
@@ -84,6 +87,8 @@ class HMDB51Dataset(Dataset):
         self.temporal_stride = temporal_stride
         self.clips_per_video = clips_per_video
         self.crops_per_clip = crops_per_clip
+        self.tsn_k = tsn_k
+        self.deterministic = deterministic
 
         self.annotation = self._read_annotation()
         self.CENTER_LEFT_TRANSFORM = self._standardized_crop(v2.Lambda(
@@ -104,14 +109,8 @@ class HMDB51Dataset(Dataset):
                                            self.crop_size, self.crop_size)))
         
         self.transform = self._create_transform()
-        self.tsn_k = tsn_k
         if self.tsn_k > 1:
             self.clips_per_video = 1
-
-        if self.regime == HMDB51Dataset.Regime.TRAINING:
-            self.deterministic = False
-        else:
-            self.deterministic = False
 
     def _standardized_crop(self, transform):
         return v2.Compose([
@@ -157,7 +156,7 @@ class HMDB51Dataset(Dataset):
             return [v2.Compose([
                 v2.RandomResizedCrop(self.crop_size),
                 v2.RandomHorizontalFlip(p=0.5),
-                v2.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4),
+                # v2.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4),
                 v2.ToDtype(torch.float32, scale=True),
                 v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
             ])]

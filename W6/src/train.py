@@ -167,7 +167,8 @@ def create_datasets(
         temporal_stride: int,
         clips_per_video: int,
         crops_per_clip: int,
-        tsn_k: int
+        tsn_k: int,
+        deterministic: bool
 ) -> Dict[str, HMDB51Dataset]:
     """
     Creates datasets for training, validation, and testing.
@@ -198,7 +199,8 @@ def create_datasets(
             temporal_stride,
             clips_per_video,
             crops_per_clip,
-            tsn_k
+            tsn_k,
+            deterministic
         )
 
     return datasets
@@ -341,6 +343,8 @@ if __name__ == "__main__":
                         help='Number of spatial crops to sample per clip')
     parser.add_argument('--tsn-k', type=int, default=3,
                         help='Number of clips to sample per video for TSN aggregation')
+    parser.add_argument('--deterministic', action='store_true', default=False,
+                        help='Use our deterministic method, TSN by default if this flag is not set')
     
 
     args = parser.parse_args()
@@ -355,7 +359,8 @@ if __name__ == "__main__":
         temporal_stride=args.temporal_stride,
         clips_per_video=args.clips_per_video,
         crops_per_clip=args.crops_per_clip,
-        tsn_k=args.tsn_k
+        tsn_k=args.tsn_k,
+        deterministic=args.deterministic
     )
 
     # Create data loaders
