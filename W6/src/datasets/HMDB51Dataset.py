@@ -1,5 +1,4 @@
 """ Dataset class for HMDB51 dataset. """
-
 import os
 import random
 from enum import Enum
@@ -12,7 +11,6 @@ import torch
 from torch.utils.data import Dataset
 from torchvision.io import read_image
 from torchvision.transforms import v2
-
 
 class HMDB51Dataset(Dataset):
     """
@@ -91,24 +89,9 @@ class HMDB51Dataset(Dataset):
         self.deterministic = deterministic
 
         self.annotation = self._read_annotation()
-        self.CENTER_LEFT_TRANSFORM = self._standardized_crop(v2.Lambda(
-            lambda img: v2.functional.crop(img, img.shape[1] // 2 - self.crop_size // 2, 0, self.crop_size,
-                                           self.crop_size)))
-        self.CENTER_RIGHT_TRANSFORM = self._standardized_crop(v2.Lambda(
-            lambda img: v2.functional.crop(img, img.shape[1] // 2 - self.crop_size // 2, img.shape[2] - self.crop_size,
-                                           self.crop_size, self.crop_size)))
-        self.CENTER_CENTER_TRANSFORM = self._standardized_crop(v2.CenterCrop(self.crop_size))
-        self.TOP_LEFT_TRANSFORM = self._standardized_crop(
-            v2.Lambda(lambda img: v2.functional.crop(img, 0, 0, self.crop_size, self.crop_size)))
-        self.TOP_RIGHT_TRANSFORM = self._standardized_crop(v2.Lambda(
-            lambda img: v2.functional.crop(img, 0, img.shape[2] - self.crop_size, self.crop_size, self.crop_size)))
-        self.BOTTOM_LEFT_TRANSFORM = self._standardized_crop(v2.Lambda(
-            lambda img: v2.functional.crop(img, img.shape[1] - self.crop_size, 0, self.crop_size, self.crop_size)))
-        self.BOTTOM_RIGHT_TRANSFORM = self._standardized_crop(v2.Lambda(
-            lambda img: v2.functional.crop(img, img.shape[1] - self.crop_size, img.shape[2] - self.crop_size,
-                                           self.crop_size, self.crop_size)))
-        
         self.transform = self._create_transform()
+        
+        # Force clips_per_video to be 1 if TSN is used
         if not self.deterministic and self.tsn_k > 1:
             self.clips_per_video = 1
 
@@ -120,6 +103,31 @@ class HMDB51Dataset(Dataset):
             v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
 
+    def _positional_crop(self, position):
+        CENTER_LEFT_TRANSFORM = self._standardized_crop(v2.Lambda(lambda img: v2.functional.crop(img, img.shape[1] // 2 - self.crop_size // 2, 0, self.crop_size, self.crop_size)))
+        CENTER_RIGHT_TRANSFORM = self._standardized_crop(v2.Lambda(lambda img: v2.functional.crop(img, img.shape[1] // 2 - self.crop_size // 2, img.shape[2] - self.crop_size, self.crop_size, self.crop_size)))
+        CENTER_CENTER_TRANSFORM = self._standardized_crop(v2.CenterCrop(self.crop_size))
+        TOP_LEFT_TRANSFORM = self._standardized_crop(v2.Lambda(lambda img: v2.functional.crop(img, 0, 0, self.crop_size, self.crop_size)))
+        TOP_RIGHT_TRANSFORM = self._standardized_crop(v2.Lambda(lambda img: v2.functional.crop(img, 0, img.shape[2] - self.crop_size, self.crop_size, self.crop_size)))
+        BOTTOM_LEFT_TRANSFORM = self._standardized_crop(v2.Lambda(lambda img: v2.functional.crop(img, img.shape[1] - self.crop_size, 0, self.crop_size, self.crop_size)))
+        BOTTOM_RIGHT_TRANSFORM = self._standardized_crop(v2.Lambda(lambda img: v2.functional.crop(img, img.shape[1] - self.crop_size, img.shape[2] - self.crop_size, self.crop_size, self.crop_size)))
+
+        if position == 'center_left':
+            return CENTER_LEFT_TRANSFORM
+        elif position == 'center_right':
+            return CENTER_RIGHT_TRANSFORM
+        elif position == 'center_center':
+            return CENTER_CENTER_TRANSFORM
+        elif position == 'top_left':
+            return TOP_LEFT_TRANSFORM
+        elif position == 'top_right':
+            return TOP_RIGHT_TRANSFORM
+        elif position == 'bottom_left':
+            return BOTTOM_LEFT_TRANSFORM
+        elif position == 'bottom_right':
+            return BOTTOM_RIGHT_TRANSFORM
+        else:
+            raise ValueError(f"Invalid crop position: {position}")
 
     def _read_annotation(self) -> pd.DataFrame:
         """
@@ -163,15 +171,15 @@ class HMDB51Dataset(Dataset):
         else:
             t = []
             if self.crops_per_clip == 0 or self.crops_per_clip == 1 or self.crops_per_clip == 3 or self.crops_per_clip == 5:
-                t.append(self.CENTER_CENTER_TRANSFORM)
+                t.append(self._positional_crop('center_center'))
             if self.crops_per_clip == 2 or self.crops_per_clip == 3:
-                t.append(self.CENTER_LEFT_TRANSFORM)
-                t.append(self.CENTER_RIGHT_TRANSFORM)
+                t.append(self._positional_crop('center_left'))
+                t.append(self._positional_crop('center_right'))
             if self.crops_per_clip == 4 or self.crops_per_clip == 5:
-                t.append(self.TOP_LEFT_TRANSFORM)
-                t.append(self.TOP_RIGHT_TRANSFORM)
-                t.append(self.BOTTOM_LEFT_TRANSFORM)
-                t.append(self.BOTTOM_RIGHT_TRANSFORM)
+                t.append(self._positional_crop('top_left'))
+                t.append(self._positional_crop('top_right'))
+                t.append(self._positional_crop('bottom_left'))
+                t.append(self._positional_crop('bottom_right'))
             return t
 
 
