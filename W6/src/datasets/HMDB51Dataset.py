@@ -163,15 +163,7 @@ class HMDB51Dataset(Dataset):
             v2.Compose: Transform for the dataset.
         """
         if self.regime == HMDB51Dataset.Regime.TRAINING:
-            if self.model_name == 'x3d_xs':
-                return [v2.Compose([
-                    v2.RandomResizedCrop(self.crop_size),
-                    v2.RandomHorizontalFlip(p=0.5),
-                    # v2.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4),
-                    v2.ToDtype(torch.float32, scale=True),
-                    v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-                ])]
-            elif self.model_name == "movinet_a0":
+            if self.model_name == "movinet_a0":
                 return [v2.Compose([
                     # Transform to float32 and normalize between 0 and 1
                     v2.ToDtype(torch.float32, scale=True),
@@ -179,6 +171,14 @@ class HMDB51Dataset(Dataset):
                     v2.RandomHorizontalFlip(p=0.5),
                     v2.Normalize(mean=[0.43216, 0.394666, 0.37645], std=[0.22803, 0.22145, 0.216989]),
                     v2.RandomResizedCrop(self.crop_size),
+                ])]
+            else:
+                return [v2.Compose([
+                    v2.RandomResizedCrop(self.crop_size),
+                    v2.RandomHorizontalFlip(p=0.5),
+                    # v2.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4),
+                    v2.ToDtype(torch.float32, scale=True),
+                    v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
                 ])]
         else:
             t = []
