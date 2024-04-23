@@ -7,6 +7,8 @@ W4/data_original
 W5/data
 W6/data
 W6/wandb
+W6/results
+W6/weights
 
 # .pt files
 *.pt
