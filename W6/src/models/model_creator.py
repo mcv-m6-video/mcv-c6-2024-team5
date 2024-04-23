@@ -21,6 +21,12 @@ def create(model_name: str, load_pretrain: bool, num_classes: int) -> nn.Module:
     
     # ? No limit models
 
+    elif model_name == 'x3d_s':
+        return create_x3d_s(load_pretrain, num_classes)
+
+    elif model_name == 'x3d_m':
+        return create_x3d_m(load_pretrain, num_classes)
+
     elif model_name == 'resnet3d_18':
         return create_resnet3d_18(load_pretrain, num_classes)
 
@@ -37,9 +43,29 @@ def create(model_name: str, load_pretrain: bool, num_classes: int) -> nn.Module:
 
     elif model_name == 'shufflenet_v2':
         return create_shufflenet_v2(load_pretrain, num_classes)
+
+    elif model_name == 'resnet50':
+        return create_resnet50(load_pretrain, num_classes)
     
     else:
         raise ValueError(f"Model {model_name} not supported")
+
+def create_x3d_s(load_pretrain, num_classes):
+    model = torch.hub.load('facebookresearch/pytorchvideo', 'x3d_s', pretrained=load_pretrain)
+    model.blocks[5].proj = nn.Identity()
+    return nn.Sequential(
+        model,
+        nn.Linear(2048, num_classes, bias=True),
+    )
+
+def create_x3d_m(load_pretrain, num_classes):
+    model = torch.hub.load('facebookresearch/pytorchvideo', 'x3d_m', pretrained=load_pretrain)
+    model.blocks[5].proj = nn.Identity()
+    return nn.Sequential(
+        model,
+        nn.Linear(2048, num_classes, bias=True),
+    )
+
 
 def create_x3d_xs(load_pretrain, num_classes):
     model = torch.hub.load('facebookresearch/pytorchvideo', 'x3d_xs', pretrained=load_pretrain)
@@ -88,4 +114,9 @@ def create_squeezenet(load_pretrain, num_classes):
 def create_shufflenet_v2(load_pretrain, num_classes):
     model = torchvision.models.shufflenet_v2_x1_5(pretrained=load_pretrain)
     model.fc = nn.Linear(1024, num_classes)
+    return model
+
+def create_resnet50(load_pretrain, num_classes):
+    model = torchvision.models.resnet50(pretrained=load_pretrain)
+    model.fc = nn.Linear(2048, num_classes)
     return model

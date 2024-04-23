@@ -166,9 +166,10 @@ class HMDB51Dataset(Dataset):
             if self.model_name == "movinet_a0":
                 return [v2.Compose([
                     # Transform to float32 and normalize between 0 and 1
-                    v2.ToDtype(torch.float32, scale=True),
+
                     v2.Resize((200, 200)),
                     v2.RandomHorizontalFlip(p=0.5),
+                    v2.ToDtype(torch.float32, scale=True),
                     v2.Normalize(mean=[0.43216, 0.394666, 0.37645], std=[0.22803, 0.22145, 0.216989]),
                     v2.RandomResizedCrop(self.crop_size),
                 ])]
@@ -380,12 +381,20 @@ class HMDB51Dataset(Dataset):
             clips = []
             for clip in clips_tensor:
                 for transform in self.transform:
-                    transformed_clip = transform(clip).permute(1, 0, 2, 3)
-                    clips.append(transformed_clip.unsqueeze(0))
+                    transformed_clip = transform(clip)
+                    if self.model_name != "resnet50":
+                        transformed_clip = transformed_clip.permute(1, 0, 2, 3)
+                        clips.append(transformed_clip.unsqueeze(0))
+                    else:
+                        clips.append(transformed_clip)
             clips = torch.cat(clips, dim=0)
             batched_clips.extend([clips.unsqueeze(0)])  # Add to the list of clips
-            batched_labels.extend([label])  # Repeat label for each clip
-            paths.extend([video_path])  # Repeat path for each clip
+            if self.model_name != "resnet50":
+                batched_labels.extend([label])  # Repeat label for each clip
+                paths.extend([video_path])  # Repeat path for each clip
+            else:
+                batched_labels.extend([label] * clips.size(0))
+                paths.extend([video_path] * clips.size(0))
 
         # Concatenate all the clips along the batch dimension
         # (num_videos * num_clips_per_video, C, T, H, W)
