@@ -46,25 +46,37 @@ def train(
     model.train()
     pbar = tqdm(train_loader, desc=description, total=len(train_loader))
     loss_train_mean = statistics.RollingMean(window_size=len(train_loader))
+    if model_name == 'movinet_a0':
+        model.clean_activation_buffers()
     hits = count = 0 # auxiliary variables for computing accuracy
-    for batch in pbar:
+    for i, batch in enumerate(pbar):
         # Gather batch and move to device
         batch_clips, labels = batch['clips'], batch['labels'].to(device)
         # Compute loss
-        clips_per_video = 1
-        if batch_clips.dim() == 6:
-            clips_per_video = batch_clips.size(1)
-            batch_clips = batch_clips.view(-1, *batch_clips.size()[2:])
-        outputs = model(batch_clips.to(device))
-        if model_name == 'movinet_a0':
-            outputs = nn.functional.log_softmax(outputs, dim=1)
-        if clips_per_video > 1:
-            outputs = outputs.view(-1, clips_per_video, outputs.size(1)).mean(dim=1)
+        if model_name != "resnet50":
+            clips_per_video = 1
+            if batch_clips.dim() == 6:
+                clips_per_video = batch_clips.size(1)
+                batch_clips = batch_clips.view(-1, *batch_clips.size()[2:])
+            outputs = model(batch_clips.to(device))
+            if model_name == 'movinet_a0':
+                outputs = nn.functional.log_softmax(outputs, dim=1)
+            if clips_per_video > 1:
+                outputs = outputs.view(-1, clips_per_video, outputs.size(1)).mean(dim=1)
+        else:
+            outputs = []
+            for clip in batch_clips:
+                output = model(clip.to(device))
+                outputs.append(output)
+            outputs = torch.vstack(outputs)
+
         loss = loss_fn(outputs, labels)
         # Backward pass
         loss.backward()
         optimizer.step()
         optimizer.zero_grad()
+        if model_name == 'movinet_a0':
+            model.clean_activation_buffers()
         # Update progress bar with metrics
         loss_iter = loss.item()
         hits_iter = torch.eq(outputs.argmax(dim=1), labels).sum().item()
@@ -122,15 +134,22 @@ def evaluate(
         # Forward pass
         with torch.no_grad():
             # outputs = torch.stack(outputs, dim=0)
-            clips_per_video = 1
-            if batch_clips.dim() == 6:
-                clips_per_video = batch_clips.size(1)
-                batch_clips = batch_clips.view(-1, *batch_clips.size()[2:])
-            outputs = model(batch_clips.to(device))
-            if model_name == 'movinet_a0':
-                outputs = nn.functional.log_softmax(outputs, dim=1)
-            if clips_per_video > 1:
-                outputs = outputs.view(-1, clips_per_video, outputs.size(1)).mean(dim=1)
+            if model_name != "resnet50":
+                clips_per_video = 1
+                if batch_clips.dim() == 6:
+                    clips_per_video = batch_clips.size(1)
+                    batch_clips = batch_clips.view(-1, *batch_clips.size()[2:])
+                outputs = model(batch_clips.to(device))
+                if model_name == 'movinet_a0':
+                    outputs = nn.functional.log_softmax(outputs, dim=1)
+                if clips_per_video > 1:
+                    outputs = outputs.view(-1, clips_per_video, outputs.size(1)).mean(dim=1)
+            else:
+                outputs = []
+                for clip in batch_clips:
+                    output = model(clip.to(device))
+                    outputs.append(output)
+                outputs = torch.vstack(outputs)
             # Compute loss (just for logging, not used for backpropagation)
             loss = loss_fn(outputs, labels)
             # Compute metrics
@@ -138,6 +157,8 @@ def evaluate(
             hits_iter = torch.eq(outputs.argmax(dim=1), labels).sum().item()
             hits += hits_iter
             count += len(labels)
+            if model_name == 'movinet_a0':
+                model.clean_activation_buffers()
             # Update progress bar with metrics
             pbar.set_postfix(
                 loss=loss_iter,
@@ -308,9 +329,9 @@ def print_model_summary(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Train a video classification model on HMDB51 dataset.')
-    parser.add_argument('frames_dir', type=str,
+    parser.add_argument('frames_dir', type=str, default="../data/frames",
                         help='Directory containing video files')
-    parser.add_argument('--annotations-dir', type=str, default="data/hmdb51/testTrainMulti_601030_splits",
+    parser.add_argument('--annotations-dir', type=str, default="../data/hmdb51/testTrainMulti_601030_splits",
                         help='Directory containing annotation files')
     parser.add_argument('--clip-length', type=int, default=4,
                         help='Number of frames of the clips')
@@ -318,9 +339,9 @@ if __name__ == "__main__":
                         help='Size of spatial crops (squares)')
     parser.add_argument('--temporal-stride', type=int, default=12,
                         help='Receptive field of the model will be (clip_length * temporal_stride) / FPS')
-    parser.add_argument('--model-name', type=str, default='x3d_xs',
+    parser.add_argument('--model-name', type=str, default='resnet50',
                         help='Model name as defined in models/model_creator.py')
-    parser.add_argument('--load-pretrain', action='store_true', default=False,
+    parser.add_argument('--load-pretrain', action='store_true', default=True,
                         help='Load pretrained weights for the model (if available)')
     parser.add_argument('--optimizer-name', type=str, default="adam",
                         help='Optimizer name (supported: "adam" and "sgd" for now)')
@@ -328,9 +349,9 @@ if __name__ == "__main__":
                         help='Learning rate')
     parser.add_argument('--epochs', type=int, default=50,
                         help='Number of epochs')
-    parser.add_argument('--batch-size', type=int, default=8,
+    parser.add_argument('--batch-size', type=int, default=4,
                         help='Batch size for the training data loader')
-    parser.add_argument('--batch-size-eval', type=int, default=8,
+    parser.add_argument('--batch-size-eval', type=int, default=4,
                         help='Batch size for the evaluation data loader')
     parser.add_argument('--validate-every', type=int, default=1,
                         help='Number of epochs after which to validate the model')
@@ -340,13 +361,13 @@ if __name__ == "__main__":
                         help='Device to use for training (cuda or cpu)')
     parser.add_argument('--early-stopping', type=int, default=5,
                         help='Number of epochs to wait after last time validation loss improved')
-    parser.add_argument('--wandb', action='store_true', default=False, 
+    parser.add_argument('--wandb', action='store_true', default=False,
                         help='Use Weights & Biases for logging')
     parser.add_argument('--load-model', type=str, default=None,
                         help='Load a model from a file')
     parser.add_argument('--only-inference', action='store_true', default=False,
                         help='Only perform inference on the test set (requires a model [--load-model] to load)')
-    parser.add_argument('--clips-per-video', type=int, default=3,
+    parser.add_argument('--clips-per-video', type=int, default=1,
                         help='Number of clips to sample per video')
     parser.add_argument('--crops-per-clip', type=int, default=1,
                         help='Number of spatial crops to sample per clip')
@@ -385,7 +406,8 @@ if __name__ == "__main__":
     optimizer = create_optimizer(args.optimizer_name, model.parameters(), lr=args.lr)
     loss_fn = nn.CrossEntropyLoss()
 
-    num_params, num_FLOPs = print_model_summary(model, args.clip_length, args.crop_size, args.model_name)
+    if args.model_name != "resnet50":
+        num_params, num_FLOPs = print_model_summary(model, args.clip_length, args.crop_size, args.model_name)
 
     model = model.to(args.device)
 
