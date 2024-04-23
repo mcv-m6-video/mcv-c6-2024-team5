@@ -1,0 +1,9 @@
+Name,Color,Parameters (M),FLOPs (G),Test accuracy (%)
+X3D-XS,lightblue,0.31,0.09,57.94%
+X3D-S,lightcyan,0.31,0.25,58.67%
+Movinet A0,lightyellow,0.26,0.03,52.21%
+Resnet 3D 18,lightcoral,3.32,5.47,38.6%
+Mixed Convolution network 18,lightsalmon,1.15,5.88,44.23%
+3 M,lightgray,0.3,4,55%
+15 M,lightgray,1.5,4.575,55%
+30 M,lightgray,3.0,5.5,55%
