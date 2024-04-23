@@ -6,7 +6,7 @@ https://detectron2.readthedocs.io/en/latest/modules/fvcore.html
 """
 
 import torch
-import fvcore
+from fvcore.nn import FlopCountAnalysis, parameter_count
 
 
 def calculate_operations(model, clip_length, crop_height, crop_width) -> int:
@@ -23,7 +23,7 @@ def calculate_operations(model, clip_length, crop_height, crop_width) -> int:
         int: Number of operations of the model.
     """
     mock_input = torch.randn(1, 3, clip_length, crop_height, crop_width)
-    flops = fvcore.nn.FlopCountAnalysis(model, mock_input)
+    flops = FlopCountAnalysis(model, mock_input)
     return flops.total()
 
 
@@ -37,4 +37,4 @@ def calculate_parameters(model) -> int:
     Returns:
         int: Number of parameters of the model.
     """
-    return fvcore.nn.parameter_count(model)['']  # '' = global count
+    return parameter_count(model)['']  # '' = global count
