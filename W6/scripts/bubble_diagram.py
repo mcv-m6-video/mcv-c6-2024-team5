@@ -33,7 +33,7 @@ fig.update_traces(marker=dict(color=grouped_data['Color']))
 
 # Add 'Parameters' text annotation at a specified position
 fig.add_annotation(
-    x=4.85, y=0.59,
+    x=4.85, y=0.28,
     text='Parameters',
     showarrow=False,
     font=dict(size=12)
@@ -48,4 +48,4 @@ fig.update_layout(
 # fig.show()
 
 # Optionally save the plot as a PNG image
-fig.write_image('bubble_plot.png')
+fig.write_image('bubble_plot_all.png')
