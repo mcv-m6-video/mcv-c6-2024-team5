@@ -26,7 +26,8 @@ def train(
         loss_fn: nn.Module,
         device: str,
         model_name: str = "",
-        description: str = ""
+        description: str = "",
+        aggregate: bool = False
     ) -> (float, float):
     """
     Trains the given model using the provided data loader, optimizer, and loss function.
@@ -67,8 +68,12 @@ def train(
             outputs = []
             for clip in batch_clips:
                 output = model(clip.to(device))
+                if aggregate:
+                    output = output.mean(dim=0)
                 outputs.append(output)
             outputs = torch.vstack(outputs)
+            if aggregate:
+                labels = labels[::batch_clips.size(1)]
 
         loss = loss_fn(outputs, labels)
         # Backward pass
@@ -101,7 +106,8 @@ def evaluate(
         device: str,
         model_name: str = "",
         description: str = "",
-        compute_per_class_acc: bool = False
+        compute_per_class_acc: bool = False,
+        aggregate: bool = False
     ) -> (float, float):
     """
     Evaluates the given model using the provided data loader and loss function.
@@ -148,8 +154,12 @@ def evaluate(
                 outputs = []
                 for clip in batch_clips:
                     output = model(clip.to(device))
+                    if aggregate:
+                        output = output.mean(dim=0)
                     outputs.append(output)
                 outputs = torch.vstack(outputs)
+                if aggregate:
+                    labels = labels[::batch_clips.size(1)]
             # Compute loss (just for logging, not used for backpropagation)
             loss = loss_fn(outputs, labels)
             # Compute metrics
@@ -361,7 +371,7 @@ if __name__ == "__main__":
                         help='Device to use for training (cuda or cpu)')
     parser.add_argument('--early-stopping', type=int, default=5,
                         help='Number of epochs to wait after last time validation loss improved')
-    parser.add_argument('--wandb', action='store_true', default=False,
+    parser.add_argument('--wandb', action='store_true', default=True,
                         help='Use Weights & Biases for logging')
     parser.add_argument('--load-model', type=str, default=None,
                         help='Load a model from a file')
@@ -375,6 +385,8 @@ if __name__ == "__main__":
                         help='Number of clips to sample per video for TSN aggregation')
     parser.add_argument('--deterministic', action='store_true', default=False,
                         help='Use our deterministic method, TSN by default if this flag is not set')
+    parser.add_argument('--aggregate', action='store_true', default=True,
+                        help='Aggregate the output of the model before computing the loss (only for resnet50, task 2)')
 
     args = parser.parse_args()
 
@@ -419,8 +431,9 @@ if __name__ == "__main__":
 
     if args.wandb:
         config = vars(args)
-        config['num_params_M'] = num_params
-        config['num_GFLOPs'] = num_FLOPs
+        if args.model_name != "resnet50":
+            config['num_params_M'] = num_params
+            config['num_GFLOPs'] = num_FLOPs
         wandb.init(project="ActionClassificationTask-W6", entity="mcv-c6-2024-team5",
                    config=config)
         wandb.watch(model)
@@ -443,13 +456,13 @@ if __name__ == "__main__":
     for epoch in range(args.epochs):
         # Training
         description = f"Training [Epoch: {epoch+1}/{args.epochs}]"
-        train_acc_mean, train_loss_mean = train(model, loaders['training'], optimizer, loss_fn, args.device, model_name=args.model_name, description=description)
+        train_acc_mean, train_loss_mean = train(model, loaders['training'], optimizer, loss_fn, args.device, model_name=args.model_name, description=description, aggregate=args.aggregate)
         if args.wandb:
             wandb.log({"train_acc": train_acc_mean, "train_loss": train_loss_mean}, step=epoch)
         # Validation
         if epoch % args.validate_every == 0:
             description = f"Validation [Epoch: {epoch + 1}/{args.epochs}]"
-            val_acc_mean, val_loss_mean = evaluate(model, loaders['validation'], loss_fn, args.device, model_name=args.model_name, description=description)
+            val_acc_mean, val_loss_mean = evaluate(model, loaders['validation'], loss_fn, args.device, model_name=args.model_name, description=description, aggregate=args.aggregate)
             if args.wandb:
                 wandb.log({"val_acc": val_acc_mean, "val_loss": val_loss_mean}, step=epoch)
             early_stopper(val_loss_mean)

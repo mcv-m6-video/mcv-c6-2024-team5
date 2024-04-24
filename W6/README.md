@@ -118,7 +118,7 @@ options:
 --temporal-stride TEMPORAL_STRIDE
                         Temporal stride to adjust the receptive field (default: 12)
 --model-name MODEL_NAME
-                        Model name as defined in models/model_creator.py (default: x3d_xs)
+                        Model name as defined in models/model_creator.py (default: x3d_xs). If the name is resnet50, Task 2 of the week will be executed.
 --load-pretrain         Load pretrained weights for the model (if available)
 --optimizer-name OPTIMIZER_NAME
                         Optimizer name (supported: "adam" and "sgd" for now) (default: adam)
@@ -146,6 +146,7 @@ options:
 --tsn-k TSN_K
                         Number of clips to sample per video for TSN aggregation (default: 3)
 --deterministic         Use our deterministic method, TSN by default if this flag is not set.
+--aggregate             Aggregate the predictions of each of the frames in a video (only use is for task 2, where we predict for each frame without considering temproral information) (default: True)
 ```
 
 ### Example runs
@@ -168,4 +169,10 @@ $ python src/train.py --model-name x3d_m --wandb data/frames
 
 ```bash
 $ python src/train.py --only-inference --load-model model.pth data/frames
+```
+
+#### Performing Task 2 of the week
+
+```bash
+python src/train.py --model-name resnet50 --wandb data/frames --aggregate 
 ```
