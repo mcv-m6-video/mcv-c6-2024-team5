@@ -1,0 +1,7 @@
+Architecture,Parameters (M),FLOPs (G),Test accuracy (%)
+X3D-XS,0.31,0.09,57.94%
+X3D-XS (Week 1),0.31,0.09,8.72%
+X3D-S,0.31,0.3,58.67%
+Movinet A0,0.26,0.03,52.21%
+Resnet 3D 18,3.32,5.47,38.6%
+Mixed Convolution network 18,1.15,5.88,44.23%

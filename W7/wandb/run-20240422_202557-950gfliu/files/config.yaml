@@ -1,0 +1,112 @@
+wandb_version: 1
+
+frames_dir:
+  desc: null
+  value: data/frames
+annotations_dir:
+  desc: null
+  value: data/hmdb51/testTrainMulti_601030_splits
+clip_length:
+  desc: null
+  value: 4
+crop_size:
+  desc: null
+  value: 182
+temporal_stride:
+  desc: null
+  value: 12
+model_name:
+  desc: null
+  value: x3d_xs
+load_pretrain:
+  desc: null
+  value: false
+optimizer_name:
+  desc: null
+  value: adam
+lr:
+  desc: null
+  value: 0.0001
+epochs:
+  desc: null
+  value: 50
+batch_size:
+  desc: null
+  value: 8
+batch_size_eval:
+  desc: null
+  value: 8
+validate_every:
+  desc: null
+  value: 1
+num_workers:
+  desc: null
+  value: 2
+device:
+  desc: null
+  value: cpu
+early_stopping:
+  desc: null
+  value: 5
+wandb:
+  desc: null
+  value: true
+load_model:
+  desc: null
+  value: null
+only_inference:
+  desc: null
+  value: false
+clips_per_video:
+  desc: null
+  value: 3
+crops_per_clip:
+  desc: null
+  value: 1
+tsn_k:
+  desc: null
+  value: 5
+deterministic:
+  desc: null
+  value: false
+without_temporal_info:
+  desc: null
+  value: true
+num_params_M:
+  desc: null
+  value: 0.31
+num_GFLOPs:
+  desc: null
+  value: 0.09
+_wandb:
+  desc: null
+  value:
+    python_version: 3.10.11
+    cli_version: 0.16.6
+    framework: torch
+    is_jupyter_run: false
+    is_kaggle_kernel: false
+    start_time: 1713810357.0
+    t:
+      1:
+      - 1
+      - 29
+      - 41
+      - 51
+      - 55
+      2:
+      - 1
+      - 29
+      - 41
+      - 51
+      - 55
+      3:
+      - 1
+      - 16
+      - 23
+      4: 3.10.11
+      5: 0.16.6
+      8:
+      - 3
+      - 5
+      13: windows-amd64

@@ -1,0 +1,58 @@
+{
+    "os": "Windows-10-10.0.22631-SP0",
+    "python": "3.10.11",
+    "heartbeatAt": "2024-04-21T18:42:50.998885",
+    "startedAt": "2024-04-21T18:42:16.305974",
+    "docker": null,
+    "cuda": null,
+    "args": [
+        "--model-name",
+        "efficientnet_b0_3d",
+        "--wandb",
+        "data/frames"
+    ],
+    "state": "running",
+    "program": "C:\\Users\\rosan\\Documents\\GitHub\\mcv-c6-2024-team5\\W6\\src\\train.py",
+    "codePathLocal": "src\\train.py",
+    "codePath": "W6\\src\\train.py",
+    "git": {
+        "remote": "https://github.com/mcv-m6-video/mcv-c6-2024-team5.git",
+        "commit": "1e142094c740471c10d919a46078ae269ef0b2c9"
+    },
+    "email": "rosanavalero5@gmail.com",
+    "root": "C:/Users/rosan/Documents/GitHub/mcv-c6-2024-team5",
+    "host": "PC-ROSANA",
+    "username": "rosan",
+    "executable": "C:\\Users\\rosan\\Desktop\\Kokiri\\Master\\M6\\Project\\M6\\Scripts\\python.exe",
+    "cpu_count": 14,
+    "cpu_count_logical": 20,
+    "cpu_freq": {
+        "current": 2700.0,
+        "min": 0.0,
+        "max": 2700.0
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 2700.0,
+            "min": 0.0,
+            "max": 2700.0
+        }
+    ],
+    "disk": {
+        "/": {
+            "total": 465.97265243530273,
+            "used": 336.33444595336914
+        }
+    },
+    "gpu": "NVIDIA GeForce RTX 3050 Ti Laptop GPU",
+    "gpu_count": 1,
+    "gpu_devices": [
+        {
+            "name": "NVIDIA GeForce RTX 3050 Ti Laptop GPU",
+            "memory_total": 4294967296
+        }
+    ],
+    "memory": {
+        "total": 15.70882797241211
+    }
+}
