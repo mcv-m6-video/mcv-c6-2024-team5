@@ -9,6 +9,10 @@ W6/data
 W6/wandb
 W6/results
 W6/weights
+W7/data
+W7/wandb
+W7/results
+W7/weights
 
 # .pt files
 *.pt
