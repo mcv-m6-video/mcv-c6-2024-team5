@@ -20,8 +20,13 @@ for folder in os.listdir(f'{root_path}/rawframes'):
                 # Load the flow_x image
                 flow_x_img = cv2.imread(f'{root_path}/rawframes/{folder}/{video}/{flow_x}', cv2.IMREAD_UNCHANGED)
                 # Load the corresponding flow_y image
-                flow_y_img = cv2.imread(f'{root_path}/rawframes/{folder}/{video}/flow_y_{flow_x[-10:-4]}.jpg', cv2.IMREAD_UNCHANGED)
-                
+                flow_y_img = cv2.imread(f'{root_path}/rawframes/{folder}/{video}/flow_y{flow_x[-10:-4]}.jpg', cv2.IMREAD_UNCHANGED)
+                print(f'{root_path}/rawframes/{folder}/{video}/{flow_x}')
+                print(f'{root_path}/rawframes/{folder}/{video}/flow_y{flow_x[-10:-4]}.jpg')
+                # Extract frame number from flow_x filename
+                frame_number = flow_x[-10:-4]
+                print(frame_number)
+
                 # Convert images to numpy arrays
                 flow_x = np.array(flow_x_img)
                 flow_y = np.array(flow_y_img)
@@ -53,6 +58,11 @@ for folder in os.listdir(f'{root_path}/rawframes'):
                 hsv[..., 1] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
                 hsv[..., 2] = 255
                 rgb = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+                
+                # Save the image with the correct frame number
+                cv2.imwrite(f'{root_path}/frames/{folder}/{video}/flow{frame_number}.png', rgb)
+                print(f'Saved: {root_path}/frames/{folder}/{video}/flow{frame_number}.png')
 
-                # Save the image
-                cv2.imwrite(f'{root_path}/frames/{folder}/{video}/flow_{flow_x[-10:-4]}.png', rgb)
+                # # Save the image
+                # cv2.imwrite(f'{root_path}/frames/{folder}/{video}/flow_{flow_x[-10:-4]}.png', rgb)
+                # print (f'{root_path}/frames/{folder}/{video}/flow_{flow_x[-10:-4]}.png')
