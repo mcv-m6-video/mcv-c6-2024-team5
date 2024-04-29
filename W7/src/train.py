@@ -345,7 +345,7 @@ if __name__ == "__main__":
                         help='Directory containing video files')
     parser.add_argument('--annotations-dir', type=str, default="data/hmdb51/testTrainMulti_601030_splits",
                         help='Directory containing annotation files')
-    parser.add_argument('--clip-length', type=int, default=4,
+    parser.add_argument('--clip-length', type=int, default=13,
                         help='Number of frames of the clips')
     parser.add_argument('--crop-size', type=int, default=182,
                         help='Size of spatial crops (squares)')
