@@ -176,13 +176,20 @@ class HMDB51Dataset(Dataset):
                     v2.RandomResizedCrop(self.crop_size),
                 ])]
             else:
-                return [v2.Compose([
-                    v2.RandomResizedCrop(self.crop_size),
-                    v2.RandomHorizontalFlip(p=0.5),
-                    # v2.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4),
-                    v2.ToDtype(torch.float32, scale=True),
-                    v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-                ])]
+                if self.mode == "rgb":
+                    return [v2.Compose([
+                        v2.RandomResizedCrop(self.crop_size),
+                        v2.RandomHorizontalFlip(p=0.5),
+                        # v2.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4),
+                        v2.ToDtype(torch.float32, scale=True),
+                        v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+                    ])]
+                elif self.mode == "flow":
+                    return [v2.Compose([
+                        v2.RandomResizedCrop(self.crop_size),
+                        # v2.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4),
+                        v2.ToDtype(torch.float32, scale=True),
+                    ])]
         else:
             t = []
             if self.crops_per_clip == 0 or self.crops_per_clip == 1 or self.crops_per_clip == 3 or self.crops_per_clip == 5:
