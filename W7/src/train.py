@@ -343,7 +343,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Train a video classification model on HMDB51 dataset.')
     parser.add_argument('frames_dir', type=str, default="../data/frames",
                         help='Directory containing video files')
-    parser.add_argument('--annotations-dir', type=str, default="../data/hmdb51/testTrainMulti_601030_splits",
+    parser.add_argument('--annotations-dir', type=str, default="data/hmdb51/testTrainMulti_601030_splits",
                         help='Directory containing annotation files')
     parser.add_argument('--clip-length', type=int, default=4,
                         help='Number of frames of the clips')
@@ -351,7 +351,7 @@ if __name__ == "__main__":
                         help='Size of spatial crops (squares)')
     parser.add_argument('--temporal-stride', type=int, default=12,
                         help='Receptive field of the model will be (clip_length * temporal_stride) / FPS')
-    parser.add_argument('--model-name', type=str, default='resnet50',
+    parser.add_argument('--model-name', type=str, default='x3d_s',
                         help='Model name as defined in models/model_creator.py')
     parser.add_argument('--load-pretrain', action='store_true', default=True,
                         help='Load pretrained weights for the model (if available)')

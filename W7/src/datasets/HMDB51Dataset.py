@@ -314,7 +314,10 @@ class HMDB51Dataset(Dataset):
         assert os.path.exists(video_path), f"Video path does not exist: {video_path}"
 
         # Read frames' paths from the video
-        frame_paths = sorted(glob(os.path.join(escape(video_path), "*.jpg")))  # get sorted frame paths
+        if self.mode == "rgb":
+            frame_paths = sorted(glob(os.path.join(escape(video_path), "*.jpg")))  # get sorted frame paths
+        elif self.mode == "flow":
+            frame_paths = sorted(glob(os.path.join(escape(video_path), "*.png")))  # get sorted flow paths
         video_len = len(frame_paths)
 
         if self.tsn_k < 2:
