@@ -58,7 +58,8 @@ class HMDB51Dataset(Dataset):
         crops_per_clip: int,
         tsn_k: int,
         deterministic: bool,
-        model_name: str
+        model_name: str,
+        mode: str
     ) -> None:
         """
         Initialize HMDB51 dataset.
@@ -89,6 +90,7 @@ class HMDB51Dataset(Dataset):
         self.tsn_k = tsn_k
         self.deterministic = deterministic
         self.model_name = model_name
+        self.mode = mode
 
         self.annotation = self._read_annotation()
         self.transform = self._create_transform()

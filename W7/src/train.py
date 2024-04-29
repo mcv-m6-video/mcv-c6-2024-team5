@@ -206,7 +206,8 @@ def create_datasets(
         crops_per_clip: int,
         tsn_k: int,
         deterministic: bool,
-        model_name: str
+        model_name: str,
+        mode: str
 ) -> Dict[str, HMDB51Dataset]:
     """
     Creates datasets for training, validation, and testing.
@@ -239,7 +240,8 @@ def create_datasets(
             crops_per_clip,
             tsn_k,
             deterministic,
-            model_name
+            model_name,
+            mode
         )
 
     return datasets
@@ -387,6 +389,8 @@ if __name__ == "__main__":
                         help='Use our deterministic method, TSN by default if this flag is not set')
     parser.add_argument('--aggregate', action='store_true', default=True,
                         help='Aggregate the output of the model before computing the loss (only for resnet50, task 2)')
+    parser.add_argument('--mode', type=str, choices=['rgb', 'flow', 'both'], default='rgb',
+                        help='Type of input data to use for the model')
 
     args = parser.parse_args()
 
@@ -402,7 +406,8 @@ if __name__ == "__main__":
         crops_per_clip=args.crops_per_clip,
         tsn_k=args.tsn_k,
         deterministic=args.deterministic,
-        model_name=args.model_name
+        model_name=args.model_name,
+        mode=args.mode
     )
 
     # Create data loaders
