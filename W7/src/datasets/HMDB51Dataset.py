@@ -100,12 +100,19 @@ class HMDB51Dataset(Dataset):
             self.clips_per_video = 1
 
     def _standardized_crop(self, transform):
-        return v2.Compose([
-            v2.Resize(self.crop_size), # Shortest side of the frame to be resized to the given size
-            transform,
-            v2.ToDtype(torch.float32, scale=True),
-            v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-        ])
+        if self.mode == "rgb":
+            return v2.Compose([
+                v2.Resize(self.crop_size), # Shortest side of the frame to be resized to the given size
+                transform,
+                v2.ToDtype(torch.float32, scale=True),
+                v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+            ])
+        else:
+            return v2.Compose([
+                v2.Resize(self.crop_size), # Shortest side of the frame to be resized to the given size
+                transform,
+                v2.ToDtype(torch.float32, scale=True)
+            ])
 
     def _positional_crop(self, position):
         CENTER_LEFT_TRANSFORM = self._standardized_crop(v2.Lambda(lambda img: v2.functional.crop(img, img.shape[1] // 2 - self.crop_size // 2, 0, self.crop_size, self.crop_size)))
