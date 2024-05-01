@@ -55,10 +55,18 @@ frames/
 |     |     |____ frame00002.jpg
 |     |     |____ frame00003.jpg
 |     |     |____ ...
+|     |     |____ flow_00001.png
+|     |     |____ flow_00002.png
+|     |     |____ flow_00003.png
+|     |     |____ ...
 |     |____ April_09_brush_hair_u_nm_np1_ba_goo_1/
 |           |____ frame00001.jpg
 |           |____ frame00002.jpg
 |           |____ frame00003.jpg
+|           |____ ...
+|           |____ flow_00001.png
+|           |____ flow_00002.png
+|           |____ flow_00003.png
 |           |____ ...
 |
 |____ cartwheel/
@@ -85,6 +93,11 @@ Before running the script, you need to install the required Python dependencies 
 $ pip3 install -r requirements.txt
 ```
 
+Also, we have to download the optical flow images from [here](https://github.com/gianscuri/Action_Recognition_Two_Stream_HMDB51?tab=readme-ov-file). Then, 
+to obtain the Optical Flow images we used, we need to execute the pairs_to_viz.py script. The images will be added as it is shown in the structure
+[above](#data-preparation).
+
+
 ### Usage
 
 Finally, the model can be run by executing `src/train.py` script, which expects one positional argument (the directory containing the frames that we've created before), but accepts other multiple arguments:
@@ -99,7 +112,7 @@ $ python3 src/train.py --help
             [--num-workers NUM_WORKERS] [--device DEVICE] [--early-stopping EARLY_STOPPING]
             [--wandb] [--load-model LOAD_MODEL] [--only-inference]
             [--clips-per-video CLIPS_PER_VIDEO] [--crops-per-clip CROPS_PER_CLIP]
-            [--tsn-k TSN_K] [--deterministic]
+            [--tsn-k TSN_K] [--deterministic] [--aggregate] [--mode MODE] [--freeze F]
             frames-dir
 
 Train a video classification model on HMDB51 dataset.
@@ -147,6 +160,8 @@ options:
                         Number of clips to sample per video for TSN aggregation (default: 3)
 --deterministic         Use our deterministic method, TSN by default if this flag is not set.
 --aggregate             Aggregate the predictions of each of the frames in a video (only use is for task 2, where we predict for each frame without considering temproral information) (default: True)
+--mode MODE             Mode to use for the model (default: rgb). If the mode is flow, the model will use the optical flow images. If the mode is rgb, the model will use the rgb images. If the mode is both, the model will use both the rgb and the optical flow images (only if model_name is mm_model).
+--freeze F              Freeze a percentage of the layers of the model (default: 0.5). Only works if the model_name is mm_model.
 ```
 
 ### Example runs
@@ -175,4 +190,10 @@ $ python src/train.py --only-inference --load-model model.pth data/frames
 
 ```bash
 python src/train.py --model-name resnet50 --wandb data/frames --aggregate 
+```
+
+#### Performing Task 2 of the week with a percentage of the layers frozen
+
+```bash
+python src/train.py --model-name mm_model --wandb data/frames --freeze 0.5
 ```

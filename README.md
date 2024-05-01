@@ -27,3 +27,9 @@ Refer to the [README.md](W5/README.md) file for the instructions.
 ## Week 6 - Action classification II
 
 Refer to the [README.md](W6/README.md) file for the instructions.
+
+## Week 7 - Action classification III
+
+Refer to the [README.md](W7/README.md) file for the instructions.
+
+Final project presentation can be found [here](https://docs.google.com/presentation/d/1ltuOeUwSavZzdTrHSjkvMszH1p3Z0341ktLP_EaLtmY/edit?usp=sharing).
