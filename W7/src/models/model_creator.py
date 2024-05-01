@@ -42,8 +42,8 @@ def create_mm(path_rgb, path_of, num_classes):
     model_of = create_x3ds_weights(num_classes, path_of)
 
     # Get rid of the last layer of the models
-    model_rgb.fc = nn.Identity()
-    model_of.fc = nn.Identity()
+    model_rgb = nn.Sequential(*list(model_rgb.children())[:-1])
+    model_of = nn.Sequential(*list(model_of.children())[:-1])
 
     final_model = MM_model(model_rgb, model_of, num_classes)
     return final_model
