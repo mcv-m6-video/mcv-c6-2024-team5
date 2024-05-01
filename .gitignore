@@ -22,3 +22,4 @@ W7/weights
 # Python .gitignore
 __pycache__/
 *.py[cod]
+/W7/scripts/content_for_GIFs
