@@ -24,6 +24,6 @@ for image_type in ['frame', 'rgb_diff_', 'skeletons_', 'flow_']:
     images.sort()
     
     # Create the GIF
-    with imageio.get_writer(content_for_GIFs_path + f'{image_type}.gif', mode='I') as writer:
+    with imageio.get_writer(content_for_GIFs_path + f'{image_type}.gif', mode='I', loop=0) as writer:
         for image in images:
             writer.append_data(imageio.imread(content_for_GIFs_path + image))
