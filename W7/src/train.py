@@ -56,15 +56,29 @@ def train(
         batch_clips, labels = batch['clips'], batch['labels'].to(device)
         # Compute loss
         if model_name != "resnet50":
-            clips_per_video = 1
-            if batch_clips.dim() == 6:
-                clips_per_video = batch_clips.size(1)
-                batch_clips = batch_clips.view(-1, *batch_clips.size()[2:])
-            outputs = model(batch_clips.to(device))
-            if model_name == 'movinet_a0':
-                outputs = nn.functional.log_softmax(outputs, dim=1)
-            if clips_per_video > 1:
-                outputs = outputs.view(-1, clips_per_video, outputs.size(1)).mean(dim=1)
+            if model_name == "mm_model":
+                # To get the RGB batch, we need the first half of every sample in the batch
+                batch_clips_rgb = batch_clips[:, :batch_clips.size(1) // 2, :, :, :, :]
+                # To get the OF batch, we need the second half of every sample in the batch
+                batch_clips_of = batch_clips[:, batch_clips.size(1) // 2:, :, :, :, :]
+                clips_per_video = 1
+                if batch_clips_rgb.dim() == 6:
+                    clips_per_video = batch_clips_rgb.size(1)
+                    batch_clips_rgb = batch_clips_rgb.reshape(-1, *batch_clips_rgb.size()[2:])
+                    batch_clips_of = batch_clips_of.reshape(-1, *batch_clips_of.size()[2:])
+                outputs = model(batch_clips_rgb.to(device), batch_clips_of.to(device))
+                if clips_per_video > 1:
+                    outputs = outputs.view(-1, clips_per_video, outputs.size(1)).mean(dim=1)
+            else:
+                clips_per_video = 1
+                if batch_clips.dim() == 6:
+                    clips_per_video = batch_clips.size(1)
+                    batch_clips = batch_clips.view(-1, *batch_clips.size()[2:])
+                outputs = model(batch_clips.to(device))
+                if model_name == 'movinet_a0':
+                    outputs = nn.functional.log_softmax(outputs, dim=1)
+                if clips_per_video > 1:
+                    outputs = outputs.view(-1, clips_per_video, outputs.size(1)).mean(dim=1)
         else:
             outputs = []
             for clip in batch_clips:
@@ -146,15 +160,29 @@ def evaluate(
         with torch.no_grad():
             # outputs = torch.stack(outputs, dim=0)
             if model_name != "resnet50":
-                clips_per_video = 1
-                if batch_clips.dim() == 6:
-                    clips_per_video = batch_clips.size(1)
-                    batch_clips = batch_clips.view(-1, *batch_clips.size()[2:])
-                outputs = model(batch_clips.to(device))
-                if model_name == 'movinet_a0':
-                    outputs = nn.functional.log_softmax(outputs, dim=1)
-                if clips_per_video > 1:
-                    outputs = outputs.view(-1, clips_per_video, outputs.size(1)).mean(dim=1)
+                if model_name == "mm_model":
+                    # To get the RGB batch, we need the first half of every sample in the batch
+                    batch_clips_rgb = batch_clips[:, :batch_clips.size(1) // 2, :, :, :, :]
+                    # To get the OF batch, we need the second half of every sample in the batch
+                    batch_clips_of = batch_clips[:, batch_clips.size(1) // 2:, :, :, :, :]
+                    clips_per_video = 1
+                    if batch_clips_rgb.dim() == 6:
+                        clips_per_video = batch_clips_rgb.size(1)
+                        batch_clips_rgb = batch_clips_rgb.reshape(-1, *batch_clips_rgb.size()[2:])
+                        batch_clips_of = batch_clips_of.reshape(-1, *batch_clips_of.size()[2:])
+                    outputs = model(batch_clips_rgb.to(device), batch_clips_of.to(device))
+                    if clips_per_video > 1:
+                        outputs = outputs.view(-1, clips_per_video, outputs.size(1)).mean(dim=1)
+                else:
+                    clips_per_video = 1
+                    if batch_clips.dim() == 6:
+                        clips_per_video = batch_clips.size(1)
+                        batch_clips = batch_clips.view(-1, *batch_clips.size()[2:])
+                    outputs = model(batch_clips.to(device))
+                    if model_name == 'movinet_a0':
+                        outputs = nn.functional.log_softmax(outputs, dim=1)
+                    if clips_per_video > 1:
+                        outputs = outputs.view(-1, clips_per_video, outputs.size(1)).mean(dim=1)
             else:
                 outputs = []
                 for clip in batch_clips:
@@ -465,7 +493,7 @@ if __name__ == "__main__":
 
     if args.wandb:
         config = vars(args)
-        if args.model_name != "resnet50":
+        if args.model_name != "resnet50" and args.model_name != "mm_model":
             config['num_params_M'] = num_params
             config['num_GFLOPs'] = num_FLOPs
         wandb.init(project="ActionClassificationTask-W6", entity="mcv-c6-2024-team5",

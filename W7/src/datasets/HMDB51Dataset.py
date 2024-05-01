@@ -93,7 +93,14 @@ class HMDB51Dataset(Dataset):
         self.mode = mode
 
         self.annotation = self._read_annotation()
-        self.transform = self._create_transform()
+        if self.mode != "both":
+            self.transform = self._create_transform()
+        else:
+            self.mode = "rgb"
+            self.rgb_transform = self._create_transform()
+            self.mode = "flow"
+            self.flow_transform = self._create_transform()
+            self.mode = "both"
         
         # Force clips_per_video to be 1 if TSN is used
         if not self.deterministic and self.tsn_k > 1:
@@ -107,12 +114,13 @@ class HMDB51Dataset(Dataset):
                 v2.ToDtype(torch.float32, scale=True),
                 v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
             ])
-        else:
+        elif self.mode == "flow":
             return v2.Compose([
                 v2.Resize(self.crop_size), # Shortest side of the frame to be resized to the given size
                 transform,
                 v2.ToDtype(torch.float32, scale=True)
             ])
+
 
     def _positional_crop(self, position):
         CENTER_LEFT_TRANSFORM = self._standardized_crop(v2.Lambda(lambda img: v2.functional.crop(img, img.shape[1] // 2 - self.crop_size // 2, 0, self.crop_size, self.crop_size)))
@@ -332,17 +340,44 @@ class HMDB51Dataset(Dataset):
             frame_paths = sorted(glob(os.path.join(escape(video_path), "*.jpg")))  # get sorted frame paths
         elif self.mode == "flow":
             frame_paths = sorted(glob(os.path.join(escape(video_path), "*.png")))  # get sorted flow paths
-        video_len = len(frame_paths)
-
-        if self.tsn_k < 2:
-            clips = self._get_segments(frame_paths, video_len)
+        elif self.mode == "both":
+            rgb_paths = sorted(glob(os.path.join(escape(video_path), "*.jpg")))[1:]  # This way, the first frame is not included (to have the same frames as the flow)
+            flow_paths = sorted(glob(os.path.join(escape(video_path), "*.png")))
+            frame_paths = [rgb_paths, flow_paths]
         else:
-            real_video_len = video_len // self.tsn_k
-            clips = []
-            for offset in range(self.tsn_k):
-                f_paths = frame_paths[offset * real_video_len: (offset + 1) * real_video_len]
-                clips.extend(self._get_segments(f_paths, real_video_len))
+            raise ValueError(f"Invalid mode: {self.mode}")
 
+        if self.mode == "rgb" or self.mode == "flow":
+            video_len = len(frame_paths)
+        elif self.mode == "both":
+            video_len = [len(frame_paths[0]), len(frame_paths[1])]
+        else:
+            raise ValueError(f"Invalid mode: {self.mode}")
+
+        if self.mode == "rgb" or self.mode == "flow":
+            if self.tsn_k < 2:
+                clips = self._get_segments(frame_paths, video_len)
+            else:
+                real_video_len = video_len // self.tsn_k
+                clips = []
+                for offset in range(self.tsn_k):
+                    f_paths = frame_paths[offset * real_video_len: (offset + 1) * real_video_len]
+                    clips.extend(self._get_segments(f_paths, real_video_len))
+        elif self.mode == "both":
+            clips_list = []
+            for i in range(2):
+                if self.tsn_k < 2:
+                    clips = self._get_segments(frame_paths[i], video_len[i])
+                else:
+                    real_video_len = video_len[i] // self.tsn_k
+                    clips = []
+                    for offset in range(self.tsn_k):
+                        f_paths = frame_paths[i][offset * real_video_len: (offset + 1) * real_video_len]
+                        clips.extend(self._get_segments(f_paths, real_video_len))
+                clips_list.extend(clips)
+            clips = clips_list
+        else:
+            raise ValueError(f"Invalid mode: {self.mode}")
 
         # Stack all clips along the first dimension to get a tensor of shape (num_clips, clip_length, C, H, W)
         clips_tensor = torch.stack(clips, dim=0)
@@ -398,14 +433,29 @@ class HMDB51Dataset(Dataset):
             # clips_tensor is (num_clips_per_video, clip_length, C, H, W)
             # We will transform each clip individually and then stack them.
             clips = []
-            for clip in clips_tensor:
-                for transform in self.transform:
-                    transformed_clip = transform(clip)
-                    if self.model_name != "resnet50":
+            if self.mode != "both":
+                for clip in clips_tensor:
+                    for transform in self.transform:
+                        transformed_clip = transform(clip)
+                        if self.model_name != "resnet50":
+                            transformed_clip = transformed_clip.permute(1, 0, 2, 3)
+                            clips.append(transformed_clip.unsqueeze(0))
+                        else:
+                            clips.append(transformed_clip)
+            else:
+                rgb_clips, flow_clips = clips_tensor.chunk(2)
+                for clip in rgb_clips:
+                    for transform in self.rgb_transform:
+                        transformed_clip = transform(clip)
                         transformed_clip = transformed_clip.permute(1, 0, 2, 3)
                         clips.append(transformed_clip.unsqueeze(0))
-                    else:
-                        clips.append(transformed_clip)
+                for clip in flow_clips:
+                    for transform in self.flow_transform:
+                        transformed_clip = transform(clip)
+                        transformed_clip = transformed_clip.permute(1, 0, 2, 3)
+                        clips.append(transformed_clip.unsqueeze(0))
+
+
             clips = torch.cat(clips, dim=0)
             batched_clips.extend([clips.unsqueeze(0)])  # Add to the list of clips
             if self.model_name != "resnet50":
