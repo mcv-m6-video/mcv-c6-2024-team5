@@ -196,6 +196,10 @@ def evaluate(
         # Transform to numpy array
         predictions = predictions.cpu().numpy()
         # Save predictions to a npy file
+        sa = save_predictions.split("/")
+        sa = "/".join(sa[:-1])
+        if not os.path.exists(sa):
+            os.makedirs(sa)
         np.save(save_predictions, predictions)
         gt_labels = torch.cat(gt_labels, dim=0)
         gt_labels = gt_labels.cpu().numpy()
@@ -364,13 +368,13 @@ if __name__ == "__main__":
                         help='Directory containing video files')
     parser.add_argument('--annotations-dir', type=str, default="../data/hmdb51/testTrainMulti_601030_splits",
                         help='Directory containing annotation files')
-    parser.add_argument('--clip-length', type=int, default=4,
+    parser.add_argument('--clip-length', type=int, default=13,
                         help='Number of frames of the clips')
     parser.add_argument('--crop-size', type=int, default=182,
                         help='Size of spatial crops (squares)')
     parser.add_argument('--temporal-stride', type=int, default=12,
                         help='Receptive field of the model will be (clip_length * temporal_stride) / FPS')
-    parser.add_argument('--model-name', type=str, default='x3d_xs',
+    parser.add_argument('--model-name', type=str, default='mm_model',
                         help='Model name as defined in models/model_creator.py')
     parser.add_argument('--load-pretrain', action='store_true', default=False,
                         help='Load pretrained weights for the model (if available)')
@@ -380,9 +384,9 @@ if __name__ == "__main__":
                         help='Learning rate')
     parser.add_argument('--epochs', type=int, default=50,
                         help='Number of epochs')
-    parser.add_argument('--batch-size', type=int, default=8,
+    parser.add_argument('--batch-size', type=int, default=2,
                         help='Batch size for the training data loader')
-    parser.add_argument('--batch-size-eval', type=int, default=8,
+    parser.add_argument('--batch-size-eval', type=int, default=2,
                         help='Batch size for the evaluation data loader')
     parser.add_argument('--validate-every', type=int, default=1,
                         help='Number of epochs after which to validate the model')
@@ -392,11 +396,11 @@ if __name__ == "__main__":
                         help='Device to use for training (cuda or cpu)')
     parser.add_argument('--early-stopping', type=int, default=5,
                         help='Number of epochs to wait after last time validation loss improved')
-    parser.add_argument('--wandb', action='store_true', default=True,
+    parser.add_argument('--wandb', action='store_true', default=False,
                         help='Use Weights & Biases for logging')
     parser.add_argument('--load-model', type=str, default=None,
                         help='Load a model from a file')
-    parser.add_argument('--only-inference', action='store_true', default=False,
+    parser.add_argument('--only-inference', action='store_true', default=True,
                         help='Only perform inference on the test set (requires a model [--load-model] to load)')
     parser.add_argument('--clips-per-video', type=int, default=1,
                         help='Number of clips to sample per video')
@@ -408,8 +412,10 @@ if __name__ == "__main__":
                         help='Use our deterministic method, TSN by default if this flag is not set')
     parser.add_argument('--aggregate', action='store_true', default=True,
                         help='Aggregate the output of the model before computing the loss (only for resnet50, task 2)')
-    parser.add_argument('--mode', type=str, choices=['rgb', 'flow', 'both'], default='flow',
+    parser.add_argument('--mode', type=str, choices=['rgb', 'flow', 'both'], default='both',
                         help='Type of input data to use for the model')
+    parser.add_argument('--freeze', type=float, default=0.9,
+                        help='Percentage of layers to freeze from the model. Only valid when model_name is mm_model. Default: 0.0')
 
     args = parser.parse_args()
 
@@ -438,11 +444,15 @@ if __name__ == "__main__":
     )
 
     # Init model, optimizer, and loss function
-    model = model_creator.create(args.model_name, args.load_pretrain, datasets["training"].get_num_classes())
+    if args.model_name != "mm_model":
+        model = model_creator.create(args.model_name, args.load_pretrain, datasets["training"].get_num_classes())
+    else:
+        model = model_creator.create_mm("weights/x3Ds_best.pth", "weights/x3Ds_best_OF.pth", datasets["training"].get_num_classes())
+        model.freeze(args.freeze)
     optimizer = create_optimizer(args.optimizer_name, model.parameters(), lr=args.lr)
     loss_fn = nn.CrossEntropyLoss()
 
-    if args.model_name != "resnet50":
+    if args.model_name != "resnet50" and args.model_name != "mm_model":
         num_params, num_FLOPs = print_model_summary(model, args.clip_length, args.crop_size, args.model_name)
 
     model = model.to(args.device)

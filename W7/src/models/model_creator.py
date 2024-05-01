@@ -7,6 +7,48 @@ import torchvision
 from movinets import MoViNet
 from movinets.config import _C
 
+
+class MM_model(nn.Module):
+    def __init__(self, model_rgb, model_of, num_classes):
+        super(MM_model, self).__init__()
+        self.model_rgb = model_rgb
+        self.model_of = model_of
+        self.fc = nn.Linear(4096, num_classes)
+
+    def forward(self, x_rgb, x_of):
+        x_rgb = self.model_rgb(x_rgb)
+        x_of = self.model_of(x_of)
+        x = torch.cat((x_rgb, x_of), dim=1)
+        x = self.fc(x)
+        return x
+
+    def freeze(self, num_layers):
+        """
+        Function to freeze the first num_layers layers of both the RGB and OF models (fc layer will always be unfrozen)
+        :param num_layers: Number of layers to freeze in percentage
+        :return:
+        """
+        layers_to_freeze = int(num_layers * len(list(self.model_rgb.parameters())))
+        for i, param in enumerate(self.model_rgb.parameters()):
+            if i < layers_to_freeze:
+                param.requires_grad = False
+        for i, param in enumerate(self.model_of.parameters()):
+            if i < layers_to_freeze:
+                param.requires_grad = False
+
+
+def create_mm(path_rgb, path_of, num_classes):
+    model_rgb = create_x3ds_weights(num_classes, path_rgb)
+    model_of = create_x3ds_weights(num_classes, path_of)
+
+    # Get rid of the last layer of the models
+    model_rgb.fc = nn.Identity()
+    model_of.fc = nn.Identity()
+
+    final_model = MM_model(model_rgb, model_of, num_classes)
+    return final_model
+
+
 def create(model_name: str, load_pretrain: bool, num_classes: int) -> nn.Module:
     if model_name == 'x3d_xs':
         return create_x3d_xs(load_pretrain, num_classes)
@@ -119,4 +161,9 @@ def create_shufflenet_v2(load_pretrain, num_classes):
 def create_resnet50(load_pretrain, num_classes):
     model = torchvision.models.resnet50(pretrained=load_pretrain)
     model.fc = nn.Linear(2048, num_classes)
+    return model
+
+def create_x3ds_weights(num_classes, path):
+    model = create_x3d_s(False, num_classes)
+    model.load_state_dict(torch.load(path))
     return model
