@@ -6,6 +6,7 @@ import argparse
 import torch
 import wandb
 import torch.nn as nn
+import numpy as np
 from tqdm import tqdm
 from typing import Dict, Iterator
 
@@ -107,7 +108,8 @@ def evaluate(
         model_name: str = "",
         description: str = "",
         compute_per_class_acc: bool = False,
-        aggregate: bool = False
+        aggregate: bool = False,
+        save_predictions: str = ""
     ) -> (float, float):
     """
     Evaluates the given model using the provided data loader and loss function.
@@ -119,7 +121,8 @@ def evaluate(
         device (str): The device on which the model and data should be processed ('cuda' or 'cpu').
         description (str, optional): Additional information for tracking epoch description during training. Defaults to "".
         compute_per_class_acc (bool, optional): Whether to compute accuracy per class. Defaults to False.
-
+        aggregate (bool, optional): Whether to aggregate the output of the model before computing the loss (only for resnet50, task 2). Defaults to False.
+        save_predictions (str, optional): Whether to save the predictions of the model (indicates the path to do so). Defaults to "".
     Returns:
         acc_mean (float): The mean accuracy of the model on the validation dataset.
         final_loss_mean (float): The mean loss of the model on the validation dataset.
@@ -130,6 +133,8 @@ def evaluate(
     hits = count = 0 # auxiliary variables for computing accuracy
     class_hits = defaultdict(int)
     class_totals = defaultdict(int)
+    predictions = []
+    gt_labels = []
 
     for batch in pbar:
         # Gather batch and move to device
@@ -161,6 +166,9 @@ def evaluate(
                 if aggregate:
                     labels = labels[::batch_clips.size(1)]
             # Compute loss (just for logging, not used for backpropagation)
+            if save_predictions != "":
+                predictions.append(outputs)
+                gt_labels.append(labels)
             loss = loss_fn(outputs, labels)
             # Compute metrics
             loss_iter = loss.item()
@@ -183,6 +191,17 @@ def evaluate(
                 if label == pred:
                     class_hits[label.item()] += 1
                 class_totals[label.item()] += 1
+    if save_predictions != "":
+        predictions = torch.cat(predictions, dim=0)
+        # Transform to numpy array
+        predictions = predictions.cpu().numpy()
+        # Save predictions to a npy file
+        np.save(save_predictions, predictions)
+        gt_labels = torch.cat(gt_labels, dim=0)
+        gt_labels = gt_labels.cpu().numpy()
+        # Save ground truth labels to a npy file if they are not already saved
+        if not os.path.exists("results/gt_labels.npy"):
+            np.save("results/gt_labels.npy", gt_labels)
     
     acc_mean = float(hits) / count
     final_loss_mean = loss_valid_mean.get_mean()
@@ -343,17 +362,17 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Train a video classification model on HMDB51 dataset.')
     parser.add_argument('frames_dir', type=str, default="../data/frames",
                         help='Directory containing video files')
-    parser.add_argument('--annotations-dir', type=str, default="data/hmdb51/testTrainMulti_601030_splits",
+    parser.add_argument('--annotations-dir', type=str, default="../data/hmdb51/testTrainMulti_601030_splits",
                         help='Directory containing annotation files')
-    parser.add_argument('--clip-length', type=int, default=13,
+    parser.add_argument('--clip-length', type=int, default=4,
                         help='Number of frames of the clips')
     parser.add_argument('--crop-size', type=int, default=182,
                         help='Size of spatial crops (squares)')
     parser.add_argument('--temporal-stride', type=int, default=12,
                         help='Receptive field of the model will be (clip_length * temporal_stride) / FPS')
-    parser.add_argument('--model-name', type=str, default='x3d_s',
+    parser.add_argument('--model-name', type=str, default='x3d_xs',
                         help='Model name as defined in models/model_creator.py')
-    parser.add_argument('--load-pretrain', action='store_true', default=True,
+    parser.add_argument('--load-pretrain', action='store_true', default=False,
                         help='Load pretrained weights for the model (if available)')
     parser.add_argument('--optimizer-name', type=str, default="adam",
                         help='Optimizer name (supported: "adam" and "sgd" for now)')
@@ -361,9 +380,9 @@ if __name__ == "__main__":
                         help='Learning rate')
     parser.add_argument('--epochs', type=int, default=50,
                         help='Number of epochs')
-    parser.add_argument('--batch-size', type=int, default=4,
+    parser.add_argument('--batch-size', type=int, default=8,
                         help='Batch size for the training data loader')
-    parser.add_argument('--batch-size-eval', type=int, default=4,
+    parser.add_argument('--batch-size-eval', type=int, default=8,
                         help='Batch size for the evaluation data loader')
     parser.add_argument('--validate-every', type=int, default=1,
                         help='Number of epochs after which to validate the model')
@@ -389,7 +408,7 @@ if __name__ == "__main__":
                         help='Use our deterministic method, TSN by default if this flag is not set')
     parser.add_argument('--aggregate', action='store_true', default=True,
                         help='Aggregate the output of the model before computing the loss (only for resnet50, task 2)')
-    parser.add_argument('--mode', type=str, choices=['rgb', 'flow', 'both'], default='rgb',
+    parser.add_argument('--mode', type=str, choices=['rgb', 'flow', 'both'], default='flow',
                         help='Type of input data to use for the model')
 
     args = parser.parse_args()
@@ -447,9 +466,9 @@ if __name__ == "__main__":
     if args.only_inference:
         if not args.load_model:
             raise ValueError("Please provide a model to load for inference")
-        test_acc_mean, test_loss_mean, acc_per_class = evaluate(model, loaders['testing'], loss_fn, args.device, model_name=args.model_name, description=f"Testing", compute_per_class_acc=True)
-        # Save image of accuracy per class
         save_path = f"results/{model_name}"
+        test_acc_mean, test_loss_mean, acc_per_class = evaluate(model, loaders['testing'], loss_fn, args.device, model_name=args.model_name, description=f"Testing", compute_per_class_acc=True, save_predictions=save_path + "/predictions.npy")
+        # Save image of accuracy per class
         plt = visualization.plot_acc_per_class(acc_per_class, save_path=save_path + "/acc_per_class.png")
         print(f"Clips_per_video =  {args.clips_per_video}, Crops_per_clip = {args.crops_per_clip}. Results: Test accuracy: {test_acc_mean}, Test loss: {test_loss_mean}")
         print(acc_per_class)
